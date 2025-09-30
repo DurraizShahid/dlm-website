@@ -21,27 +21,9 @@ const Navbar = () => {
           DLM
         </Link>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-6">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              to={link.path}
-              className="text-sm font-medium text-gray-700 transition-colors hover:text-green-700 dark:text-gray-300 dark:hover:text-green-400"
-            >
-              {link.name}
-            </Link>
-          ))}
-          <Link to="/apply">
-            <Button className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold px-4 py-2 rounded-full text-sm shadow-md transition-all duration-300 ease-in-out hover:scale-105">
-              Apply
-            </Button>
-          </Link>
-        </nav>
-
-        {/* Mobile Navigation */}
+        {/* Navigation always hidden behind hamburger */}
         <Sheet>
-          <SheetTrigger asChild className="md:hidden">
+          <SheetTrigger asChild> {/* Removed md:hidden, so it's always visible */}
             <Button variant="outline" size="icon">
               <Menu className="h-6 w-6" />
               <span className="sr-only">Toggle navigation menu</span>
