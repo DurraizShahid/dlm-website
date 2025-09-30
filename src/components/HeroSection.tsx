@@ -6,8 +6,8 @@ import { Link } from "react-router-dom";
 
 const HeroSection = () => {
   return (
-    <section className="bg-gradient-to-br from-green-800 via-emerald-600 to-yellow-500 text-white py-16 px-4 sm:py-24 sm:px-8 w-full"> {/* Added gradient and w-full */}
-      <div className="text-center max-w-4xl mx-auto space-y-8"> {/* Added inner div for content constraint */}
+    <section className="text-white py-16 px-4 sm:py-24 sm:px-8 w-full"> {/* Removed gradient classes */}
+      <div className="text-center max-w-4xl mx-auto space-y-8">
         <h1 className="text-4xl sm:text-6xl font-extrabold leading-tight tracking-tight animate-fade-in-up">
           Your Idea Deserves the Spotlight—This is Your Chance.
         </h1>
