@@ -25,17 +25,17 @@ const HowItWorksSection = () => {
   ];
 
   return (
-    <section className="bg-gradient-to-br from-green-800 via-emerald-600 to-yellow-500 text-white py-16 px-4 sm:py-24 sm:px-8 text-center">
+    <section className="bg-white text-gray-900 py-16 px-4 sm:py-24 sm:px-8 text-center"> {/* Changed background to solid white and text to gray-900 */}
       <div className="max-w-5xl mx-auto space-y-12">
         <h2 className="text-3xl sm:text-5xl font-extrabold leading-tight tracking-tight">
           How It Works
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {steps.map((step, index) => (
-            <div key={index} className="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-6 shadow-xl transform transition-all duration-300 hover:scale-105 hover:bg-opacity-20">
+            <div key={index} className="bg-gray-50 rounded-lg p-6 shadow-xl transform transition-all duration-300 hover:scale-105 border border-gray-200"> {/* Adjusted card background and border */}
               <div className="mb-4 flex justify-center">{step.icon}</div>
               <h3 className="text-xl sm:text-2xl font-bold mb-2">{step.title}</h3>
-              <p className="text-md sm:text-lg text-gray-200">{step.description}</p>
+              <p className="text-md sm:text-lg text-gray-700">{step.description}</p>
             </div>
           ))}
         </div>
