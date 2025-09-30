@@ -10,7 +10,7 @@ import FinalPunchSection from "@/components/FinalPunchSection";
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-green-800 via-emerald-600 to-yellow-500 text-white">
+    <div className="min-h-screen flex flex-col items-center bg-gray-100"> {/* Removed gradient and text-white from here */}
       <HeroSection />
       <WhyDLMSection />
       <HowItWorksSection />

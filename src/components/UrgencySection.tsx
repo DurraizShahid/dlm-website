@@ -49,8 +49,8 @@ const UrgencySection = () => {
   });
 
   return (
-    <section className="bg-red-700 text-white py-16 px-4 sm:py-24 sm:px-8 text-center">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <section className="bg-red-700 text-white py-16 px-4 sm:py-24 sm:px-8 text-center w-full"> {/* Added w-full */}
+      <div className="max-w-4xl mx-auto space-y-8"> {/* Re-added max-w-4xl to keep content centered and readable */}
         <h2 className="text-3xl sm:text-5xl font-extrabold leading-tight tracking-tight">
           Applications close soon. If you don’t apply now, you’ll lose your shot.
         </h2>
