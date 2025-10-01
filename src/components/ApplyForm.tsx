@@ -130,6 +130,20 @@ const ApplyForm = () => {
     let videoUrl = null;
 
     try {
+      // Check for duplicate CNIC or contact before proceeding
+      const { data: existingApplications, error: checkError } = await supabase
+        .from('applications')
+        .select('id')
+        .or(`cnic.eq.${data.cnic},contact.eq.${data.contact}`);
+
+      if (checkError) {
+        throw new Error(translate(`Error checking for existing applications: ${checkError.message}`));
+      }
+
+      if (existingApplications && existingApplications.length > 0) {
+        throw new Error(translate("An application with this CNIC or Email/Phone has already been registered."));
+      }
+
       // 1. Upload video to Supabase Storage
       if (data.video) {
         const fileExtension = data.video.name.split('.').pop();
