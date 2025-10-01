@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 
 const FinalPunchSection = () => {
   return (
-    <section className="bg-gradient-to-br from-green-800 via-emerald-600 to-yellow-500 text-white py-16 px-4 sm:py-24 sm:px-8 text-center">
+    <section className="text-white py-16 px-4 sm:py-24 sm:px-8 text-center"> {/* Removed gradient classes, text remains white */}
       <div className="max-w-4xl mx-auto space-y-8">
         <h2 className="text-3xl sm:text-5xl font-extrabold leading-tight tracking-tight">
           Opportunities Like This Don’t Come Twice.
