@@ -78,7 +78,7 @@ export const translations = {
   "Idea Title must be at least 5 characters.": { en: "Idea Title must be at least 5 characters.", ur: "خیال کا عنوان کم از کم 5 حروف کا ہونا چاہیے۔" },
   "Short Description (300-500 characters)": { en: "Short Description (300-500 characters)", ur: "مختصر تفصیل (300-500 حروف)" },
   "Description must be at least 300 characters.": { en: "Description must be at least 300 characters.", ur: "تفصیل کم از کم 300 حروف کی ہونی چاہیے۔" },
-  "Description cannot exceed 500 characters.": { en: "Description cannot exceed 500 characters.": { en: "Description cannot exceed 500 characters.", ur: "تفصیل 500 حروف سے زیادہ نہیں ہو سکتی۔" },
+  "Description cannot exceed 500 characters.": { en: "Description cannot exceed 500 characters.", ur: "تفصیل 500 حروف سے زیادہ نہیں ہو سکتی۔" },
   "Upload Video (Required)": { en: "Upload Video (Required)", ur: "ویڈیو اپ لوڈ کریں (لازمی)" },
   "Upload a short video (max 2 minutes). Tell us your idea and why you deserve to win. Accept: .mp4, .mov, .avi (max 200MB)": { en: "Upload a short video (max 2 minutes). Tell us your idea and why you deserve to win. Accept: .mp4, .mov, .avi (max 200MB)", ur: "ایک مختصر ویڈیو (زیادہ سے زیادہ 2 منٹ) اپ لوڈ کریں۔ ہمیں اپنا خیال بتائیں اور آپ کیوں جیتنے کے مستحق ہیں۔ قابل قبول فارمیٹس: .mp4، .mov، .avi (زیادہ سے زیادہ 200MB)" },
   "Max video size is 200MB.": { en: "Max video size is 200MB.", ur: "ویڈیو کا زیادہ سے زیادہ سائز 200MB ہے۔" },
