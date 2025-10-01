@@ -73,7 +73,7 @@ export const translations = {
   "CNIC": { en: "CNIC", ur: "شناختی کارڈ نمبر" },
   "Please enter a valid Pakistani CNIC number (e.g., 12345-1234567-1).": { en: "Please enter a valid Pakistani CNIC number (e.g., 12345-1234567-1).", ur: "برائے مہربانی ایک درست پاکستانی شناختی کارڈ نمبر درج کریں (مثلاً 12345-1234567-1)۔" },
   "Email / Phone": { en: "Email / Phone", ur: "ای میل / فون" },
-  "Please enter a valid email or phone number.": { en: "Please enter a valid email or phone number.": { en: "Please enter a valid email or phone number.", ur: "برائے مہربانی ایک درست ای میل یا فون نمبر درج کریں۔" },
+  "Please enter a valid email or phone number.": { en: "Please enter a valid email or phone number.", ur: "برائے مہربانی ایک درست ای میل یا فون نمبر درج کریں۔" },
   "Idea Title": { en: "Idea Title", ur: "خیال کا عنوان" },
   "Idea Title must be at least 5 characters.": { en: "Idea Title must be at least 5 characters.", ur: "خیال کا عنوان کم از کم 5 حروف کا ہونا چاہیے۔" },
   "Short Description (300-500 characters)": { en: "Short Description (300-500 characters)", ur: "مختصر تفصیل (300-500 حروف)" },
