@@ -16,31 +16,34 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { UploadCloud, FileText, XCircle } from "lucide-react";
-import { showSuccess, showError } from "@/utils/toast";
-
-// Zod schema for form validation
-const applyFormSchema = z.object({
-  fullName: z.string().min(2, { message: "Full Name must be at least 2 characters." }),
-  age: z.coerce.number().min(18, { message: "You must be at least 18 years old." }).max(100, { message: "Age cannot exceed 100." }),
-  city: z.string().min(2, { message: "City must be at least 2 characters." }),
-  contact: z.string().refine(
-    (value) => {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      const phoneRegex = /^\+?[1-9]\d{1,14}$/; // E.164 format for phone numbers
-      return emailRegex.test(value) || phoneRegex.test(value);
-    },
-    { message: "Please enter a valid email or phone number." }
-  ),
-  ideaTitle: z.string().min(5, { message: "Idea Title must be at least 5 characters." }),
-  shortDescription: z.string().min(300, { message: "Description must be at least 300 characters." }).max(500, { message: "Description cannot exceed 500 characters." }),
-  video: z.instanceof(File, { message: "Video upload is required." })
-    .refine((file) => file.size <= 200 * 1024 * 1024, `Max video size is 200MB.`)
-    .refine((file) => ['video/mp4', 'video/quicktime', 'video/x-msvideo'].includes(file.type), `Only .mp4, .mov, .avi formats are accepted.`),
-});
-
-type ApplyFormValues = z.infer<typeof applyFormSchema>;
+import { showSuccess } from "@/utils/toast";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const ApplyForm = () => {
+  const { translate } = useLanguage();
+
+  // Zod schema for form validation
+  const applyFormSchema = z.object({
+    fullName: z.string().min(2, { message: translate("Full Name must be at least 2 characters.") }),
+    age: z.coerce.number().min(18, { message: translate("You must be at least 18 years old.") }).max(100, { message: translate("Age cannot exceed 100.") }),
+    city: z.string().min(2, { message: translate("City must be at least 2 characters.") }),
+    contact: z.string().refine(
+      (value) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const phoneRegex = /^\+?[1-9]\d{1,14}$/; // E.164 format for phone numbers
+        return emailRegex.test(value) || phoneRegex.test(value);
+      },
+      { message: translate("Please enter a valid email or phone number.") }
+    ),
+    ideaTitle: z.string().min(5, { message: translate("Idea Title must be at least 5 characters.") }),
+    shortDescription: z.string().min(300, { message: translate("Description must be at least 300 characters.") }).max(500, { message: translate("Description cannot exceed 500 characters.") }),
+    video: z.instanceof(File, { message: translate("Video upload is required.") })
+      .refine((file) => file.size <= 200 * 1024 * 1024, translate(`Max video size is 200MB.`))
+      .refine((file) => ['video/mp4', 'video/quicktime', 'video/x-msvideo'].includes(file.type), translate(`Only .mp4, .mov, .avi formats are accepted.`)),
+  });
+
+  type ApplyFormValues = z.infer<typeof applyFormSchema>;
+
   const form = useForm<ApplyFormValues>({
     resolver: zodResolver(applyFormSchema),
     defaultValues: {
@@ -102,10 +105,7 @@ const ApplyForm = () => {
 
   const onSubmit = (data: ApplyFormValues) => {
     console.log("Form Data Submitted:", data);
-    // In a real application, you would send `data` to your backend here.
-    // For video, you'd typically upload the file to cloud storage (e.g., AWS S3, Supabase Storage)
-    // and send the resulting URL along with other form data.
-    showSuccess("Application submitted successfully! (Simulated)");
+    showSuccess(translate("Application submitted successfully! (Simulated)"));
     form.reset(); // Reset form after successful submission
     handleRemoveVideo(); // Clear video field explicitly
   };
@@ -114,10 +114,10 @@ const ApplyForm = () => {
     <section className="bg-white text-gray-900 py-16 px-4 sm:py-24 sm:px-8">
       <div className="max-w-3xl mx-auto space-y-12">
         <h1 className="text-4xl sm:text-6xl font-extrabold leading-tight tracking-tight text-center">
-          Submit Your Idea
+          {translate("Submit Your Idea")}
         </h1>
         <p className="text-lg sm:text-xl text-gray-700 text-center">
-          Fill out the form below to apply for a chance to win 10 Lakh Rupees and bring your dream to life.
+          {translate("Fill out the form below to apply for a chance to win 10 Lakh Rupees and bring your dream to life.")}
         </p>
 
         <Form {...form}>
@@ -127,7 +127,7 @@ const ApplyForm = () => {
               name="fullName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full Name</FormLabel>
+                  <FormLabel>{translate("Full Name")}</FormLabel>
                   <FormControl>
                     <Input placeholder="John Doe" {...field} />
                   </FormControl>
@@ -140,7 +140,7 @@ const ApplyForm = () => {
               name="age"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Age</FormLabel>
+                  <FormLabel>{translate("Age")}</FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="25" {...field} onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)} />
                   </FormControl>
@@ -153,7 +153,7 @@ const ApplyForm = () => {
               name="city"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>City</FormLabel>
+                  <FormLabel>{translate("City")}</FormLabel>
                   <FormControl>
                     <Input placeholder="Karachi" {...field} />
                   </FormControl>
@@ -166,7 +166,7 @@ const ApplyForm = () => {
               name="contact"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email / Phone</FormLabel>
+                  <FormLabel>{translate("Email / Phone")}</FormLabel>
                   <FormControl>
                     <Input placeholder="example@email.com or +923001234567" {...field} />
                   </FormControl>
@@ -179,7 +179,7 @@ const ApplyForm = () => {
               name="ideaTitle"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Idea Title</FormLabel>
+                  <FormLabel>{translate("Idea Title")}</FormLabel>
                   <FormControl>
                     <Input placeholder="My Innovative Project" {...field} />
                   </FormControl>
@@ -192,7 +192,7 @@ const ApplyForm = () => {
               name="shortDescription"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Short Description (300-500 characters)</FormLabel>
+                  <FormLabel>{translate("Short Description (300-500 characters)")}</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Describe your idea in detail..."
@@ -212,10 +212,9 @@ const ApplyForm = () => {
               name="video"
               render={() => (
                 <FormItem>
-                  <FormLabel>Upload Video (Required)</FormLabel>
+                  <FormLabel>{translate("Upload Video (Required)")}</FormLabel>
                   <p className="text-sm text-gray-600 mb-2">
-                    Upload a short video (max 2 minutes). Tell us your idea and why you deserve to win.
-                    Accept: .mp4, .mov, .avi (max 200MB)
+                    {translate("Upload a short video (max 2 minutes). Tell us your idea and why you deserve to win. Accept: .mp4, .mov, .avi (max 200MB)")}
                   </p>
                   <FormControl>
                     <div
@@ -239,7 +238,7 @@ const ApplyForm = () => {
                         <>
                           <UploadCloud className="h-12 w-12 text-gray-400 mb-3" />
                           <p className="text-gray-600 text-center">
-                            Drag & drop your video here, or <span className="text-blue-600 font-medium">click to browse</span>
+                            {translate("Drag & drop your video here, or click to browse")}
                           </p>
                         </>
                       )}
@@ -261,7 +260,7 @@ const ApplyForm = () => {
               type="submit"
               className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 px-8 rounded-full text-lg shadow-lg transform transition-all duration-300 ease-in-out hover:scale-105 focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:ring-opacity-75"
             >
-              Submit Application
+              {translate("Submit Application")}
             </Button>
           </form>
         </Form>

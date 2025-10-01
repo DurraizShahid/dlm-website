@@ -4,15 +4,28 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+import { Menu, Globe } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const Navbar = () => {
+  const { language, setLanguage, translate } = useLanguage();
+
   const navLinks = [
-    { name: "Home", path: "/" },
-    { name: "About", path: "/about" },
-    { name: "How It Works", path: "/how-it-works" },
-    { name: "FAQ", path: "/faq" },
+    { name: translate("Home"), path: "/" },
+    { name: translate("About"), path: "/about" },
+    { name: translate("How It Works"), path: "/how-it-works" },
+    { name: translate("FAQ"), path: "/faq" },
   ];
+
+  const handleLanguageChange = (newLang: 'en' | 'ur') => {
+    setLanguage(newLang);
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-gray-900/95 dark:supports-[backdrop-filter]:bg-gray-900/60">
@@ -34,38 +47,72 @@ const Navbar = () => {
           ))}
           <Link to="/apply">
             <Button className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold px-4 py-2 rounded-full text-sm shadow-md transition-all duration-300 ease-in-out hover:scale-105">
-              Apply
+              {translate("Apply")}
             </Button>
           </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <Globe className="h-5 w-5" />
+                <span className="sr-only">Select language</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleLanguageChange('en')} className={language === 'en' ? 'font-bold' : ''}>
+                {translate("English")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleLanguageChange('ur')} className={language === 'ur' ? 'font-bold' : ''}>
+                {translate("Urdu")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </nav>
 
         {/* Mobile Navigation */}
-        <Sheet>
-          <SheetTrigger asChild className="md:hidden">
-            <Button variant="outline" size="icon">
-              <Menu className="h-6 w-6" />
-              <span className="sr-only">Toggle navigation menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right">
-            <nav className="flex flex-col gap-4 py-6">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  to={link.path}
-                  className="text-lg font-medium text-gray-700 hover:text-green-700 dark:text-gray-300 dark:hover:text-green-400"
-                >
-                  {link.name}
+        <div className="flex items-center md:hidden">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="mr-2">
+                <Globe className="h-5 w-5" />
+                <span className="sr-only">Select language</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleLanguageChange('en')} className={language === 'en' ? 'font-bold' : ''}>
+                {translate("English")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleLanguageChange('ur')} className={language === 'ur' ? 'font-bold' : ''}>
+                {translate("Urdu")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon">
+                <Menu className="h-6 w-6" />
+                <span className="sr-only">{translate("Toggle navigation menu")}</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right">
+              <nav className="flex flex-col gap-4 py-6">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.name}
+                    to={link.path}
+                    className="text-lg font-medium text-gray-700 hover:text-green-700 dark:text-gray-300 dark:hover:text-green-400"
+                  >
+                    {link.name}
+                  </Link>
+                ))}
+                <Link to="/apply">
+                  <Button className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold px-4 py-2 rounded-full text-lg shadow-md transition-all duration-300 ease-in-out hover:scale-105 mt-4 w-full">
+                    {translate("Apply")}
+                  </Button>
                 </Link>
-              ))}
-              <Link to="/apply">
-                <Button className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold px-4 py-2 rounded-full text-lg shadow-md transition-all duration-300 ease-in-out hover:scale-105 mt-4 w-full">
-                  Apply
-                </Button>
-              </Link>
-            </nav>
-          </SheetContent>
-        </Sheet>
+              </nav>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
     </header>
   );
