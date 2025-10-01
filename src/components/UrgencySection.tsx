@@ -53,6 +53,9 @@ const UrgencySection = () => {
         <h2 className="text-3xl sm:text-5xl font-extrabold leading-tight tracking-tight">
           Applications close soon. If you don’t apply now, you’ll lose your shot.
         </h2>
+        <p className="text-lg sm:text-xl italic opacity-90">
+          Applications jald band ho jayengi. Agar aap abhi apply nahi karte, toh aap apna mauqa kho denge.
+        </p>
         <div className="flex justify-center items-center mt-8">
           {timerComponents.length ? timerComponents : <span className="text-3xl sm:text-5xl font-bold">Time's Up!</span>}
         </div>
