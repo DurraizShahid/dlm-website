@@ -25,16 +25,18 @@ const SuccessStoriesSection = () => {
   ];
 
   return (
-    <section className="bg-gray-100 text-gray-900 py-16 px-4 sm:py-24 sm:px-8 text-center">
+    <section className="text-white py-16 px-4 sm:py-24 sm:px-8 text-center"> {/* Removed bg-gray-100, text changed to white */}
       <div className="max-w-5xl mx-auto space-y-12">
-        <h2 className="text-3xl sm:text-5xl font-extrabold leading-tight tracking-tight">
+        <h2 className="text-3xl sm:text-5xl font-extrabold leading-tight tracking-tight text-white"> {/* Changed text to white */}
           Be the Next Success Story Everyone Talks About.
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {stories.map((story, index) => (
             <div key={index} className="bg-white rounded-lg p-6 shadow-lg transform transition-all duration-300 hover:scale-105 border border-gray-200">
               <img src={story.image} alt={story.name} className="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-4 border-yellow-500" />
-              <h3 className="text-xl sm:text-2xl font-bold mb-2">{story.name}</h3>
+              <h3 className="text-xl sm:text-2xl font-bold mb-2 text-gray-900"> {/* Changed text to gray-900 for contrast on white card */}
+                {story.name}
+              </h3>
               <p className="text-md sm:text-lg text-gray-700">{story.description}</p>
             </div>
           ))}
