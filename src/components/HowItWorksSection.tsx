@@ -25,16 +25,18 @@ const HowItWorksSection = () => {
   ];
 
   return (
-    <section className="text-white py-16 px-4 sm:py-24 sm:px-8 text-center"> {/* Removed bg-white, inherited gradient from parent */}
+    <section className="text-white py-16 px-4 sm:py-24 sm:px-8 text-center">
       <div className="max-w-5xl mx-auto space-y-12">
-        <h2 className="text-3xl sm:text-5xl font-extrabold leading-tight tracking-tight text-white"> {/* Changed text to white */}
+        <h2 className="text-3xl sm:text-5xl font-extrabold leading-tight tracking-tight text-white">
           How It Works
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {steps.map((step, index) => (
             <div key={index} className="bg-gray-50 rounded-lg p-6 shadow-xl transform transition-all duration-300 hover:scale-105 border border-gray-200">
               <div className="mb-4 flex justify-center">{step.icon}</div>
-              <h3 className="text-xl sm:text-2xl font-bold mb-2">{step.title}</h3>
+              <h3 className="text-xl sm:text-2xl font-bold mb-2 text-gray-900"> {/* Changed text color to gray-900 (black) */}
+                {step.title}
+              </h3>
               <p className="text-md sm:text-lg text-gray-700">{step.description}</p>
             </div>
           ))}
