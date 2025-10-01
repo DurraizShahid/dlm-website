@@ -6,13 +6,16 @@ import { Link } from "react-router-dom";
 
 const HeroSection = () => {
   return (
-    <section className="text-white py-16 px-4 sm:py-24 sm:px-8 w-full"> {/* Removed gradient classes */}
+    <section className="text-white py-16 px-4 sm:py-24 sm:px-8 w-full">
       <div className="text-center max-w-4xl mx-auto space-y-8">
         <h1 className="text-4xl sm:text-6xl font-extrabold leading-tight tracking-tight animate-fade-in-up">
           Your Idea Deserves the Spotlight—This is Your Chance.
         </h1>
         <p className="text-lg sm:text-2xl animate-fade-in-up delay-200">
           Pakistan’s first platform giving everyday people the chance to win 10 Lakh Rupees to bring their idea to life.
+        </p>
+        <p className="text-md sm:text-xl animate-fade-in-up delay-200 italic opacity-90">
+          Pakistan ka pehla platform jo aam logon ko 10 Lakh Rupees jeetne ka mauqa deta hai taake woh apne khwab poore kar saken.
         </p>
         <div className="pt-8 flex flex-col sm:flex-row justify-center items-center gap-4 animate-fade-in-up delay-600">
           <Link to="/apply">
