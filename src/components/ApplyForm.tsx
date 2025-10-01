@@ -16,8 +16,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { UploadCloud, FileText, XCircle } from "lucide-react";
-import { showSuccess } from "@/utils/toast";
+import { showSuccess, showError, showLoading, dismissToast } from "@/utils/toast";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { supabase } from "@/integrations/supabase/client"; // Import Supabase client
 
 const ApplyForm = () => {
   const { translate } = useLanguage();
@@ -124,11 +125,59 @@ const ApplyForm = () => {
     form.setValue("cnic", formattedValue, { shouldValidate: true });
   };
 
-  const onSubmit = (data: ApplyFormValues) => {
-    console.log("Form Data Submitted:", data);
-    showSuccess(translate("Application submitted successfully! (Simulated)"));
-    form.reset(); // Reset form after successful submission
-    handleRemoveVideo(); // Clear video field explicitly
+  const onSubmit = async (data: ApplyFormValues) => {
+    const loadingToastId = showLoading(translate("Submitting your application..."));
+    let videoUrl = null;
+
+    try {
+      // 1. Upload video to Supabase Storage
+      if (data.video) {
+        const fileExtension = data.video.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExtension}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('application-videos')
+          .upload(fileName, data.video, {
+            cacheControl: '3600',
+            upsert: false,
+          });
+
+        if (uploadError) {
+          throw new Error(translate(`Video upload failed: ${uploadError.message}`));
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from('application-videos')
+          .getPublicUrl(fileName);
+        
+        videoUrl = publicUrlData.publicUrl;
+      }
+
+      // 2. Insert form data into Supabase database
+      const { error: insertError } = await supabase
+        .from('applications')
+        .insert({
+          full_name: data.fullName,
+          age: data.age,
+          city: data.city,
+          cnic: data.cnic,
+          contact: data.contact,
+          idea_title: data.ideaTitle,
+          short_description: data.shortDescription,
+          video_url: videoUrl,
+        });
+
+      if (insertError) {
+        throw new Error(translate(`Application submission failed: ${insertError.message}`));
+      }
+
+      showSuccess(translate("Application submitted successfully!"));
+      form.reset(); // Reset form after successful submission
+      handleRemoveVideo(); // Clear video field explicitly
+    } catch (error: any) {
+      showError(error.message || translate("An unexpected error occurred."));
+    } finally {
+      dismissToast(loadingToastId);
+    }
   };
 
   return (
