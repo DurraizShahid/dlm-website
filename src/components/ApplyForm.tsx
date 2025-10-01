@@ -22,11 +22,15 @@ import { useLanguage } from "@/i18n/LanguageContext";
 const ApplyForm = () => {
   const { translate } = useLanguage();
 
+  // Regex for Pakistani CNIC format: XXXXX-XXXXXXX-X
+  const cnicRegex = /^\d{5}-\d{7}-\d{1}$/;
+
   // Zod schema for form validation
   const applyFormSchema = z.object({
     fullName: z.string().min(2, { message: translate("Full Name must be at least 2 characters.") }),
     age: z.coerce.number().min(18, { message: translate("You must be at least 18 years old.") }).max(100, { message: translate("Age cannot exceed 100.") }),
     city: z.string().min(2, { message: translate("City must be at least 2 characters.") }),
+    cnic: z.string().regex(cnicRegex, { message: translate("Please enter a valid Pakistani CNIC number (e.g., 12345-1234567-1).") }),
     contact: z.string().refine(
       (value) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -50,6 +54,7 @@ const ApplyForm = () => {
       fullName: "",
       age: undefined,
       city: "",
+      cnic: "", // Initialize CNIC field
       contact: "",
       ideaTitle: "",
       shortDescription: "",
@@ -102,6 +107,22 @@ const ApplyForm = () => {
     form.setValue("video", undefined, { shouldValidate: true });
     form.trigger("video");
   }, [form]);
+
+  const handleCnicChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    let value = event.target.value.replace(/\D/g, ''); // Remove non-digits
+    let formattedValue = '';
+
+    if (value.length > 0) {
+      formattedValue = value.substring(0, 5);
+    }
+    if (value.length > 5) {
+      formattedValue += '-' + value.substring(5, 12);
+    }
+    if (value.length > 12) {
+      formattedValue += '-' + value.substring(12, 13);
+    }
+    form.setValue("cnic", formattedValue, { shouldValidate: true });
+  };
 
   const onSubmit = (data: ApplyFormValues) => {
     console.log("Form Data Submitted:", data);
@@ -156,6 +177,24 @@ const ApplyForm = () => {
                   <FormLabel>{translate("City")}</FormLabel>
                   <FormControl>
                     <Input placeholder="Karachi" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="cnic"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{translate("CNIC")}</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="12345-1234567-1"
+                      maxLength={15} // 5 digits + 1 dash + 7 digits + 1 dash + 1 digit = 15 characters
+                      {...field}
+                      onChange={handleCnicChange}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
