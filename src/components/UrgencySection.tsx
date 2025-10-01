@@ -5,9 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
 const UrgencySection = () => {
-  // Set the target date for the countdown (e.g., 7 days from now)
-  const targetDate = new Date();
-  targetDate.setDate(targetDate.getDate() + 7); // Example: 7 days from now
+  // Set the target date for the countdown to October 8th, 2025
+  const targetDate = new Date('2025-10-08T00:00:00'); // October 8th, 2025, at midnight
 
   const calculateTimeLeft = () => {
     const difference = +targetDate - +new Date();
@@ -49,8 +48,8 @@ const UrgencySection = () => {
   });
 
   return (
-    <section className="bg-red-700 text-white py-16 px-4 sm:py-24 sm:px-8 text-center w-full"> {/* Added w-full */}
-      <div className="max-w-4xl mx-auto space-y-8"> {/* Re-added max-w-4xl to keep content centered and readable */}
+    <section className="bg-red-700 text-white py-16 px-4 sm:py-24 sm:px-8 text-center w-full">
+      <div className="max-w-4xl mx-auto space-y-8">
         <h2 className="text-3xl sm:text-5xl font-extrabold leading-tight tracking-tight">
           Applications close soon. If you don’t apply now, you’ll lose your shot.
         </h2>
