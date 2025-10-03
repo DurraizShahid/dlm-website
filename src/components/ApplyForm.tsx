@@ -232,6 +232,7 @@ const ApplyForm = () => {
         idea_title: data.ideaTitle,
         short_description: data.shortDescription,
         video_url: videoUrl,
+        // user_id is removed as there is no logged-in user
       })
       .select('id')
       .single();
