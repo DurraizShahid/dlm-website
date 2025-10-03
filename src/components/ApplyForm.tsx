@@ -15,6 +15,16 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { UploadCloud, FileText, XCircle } from "lucide-react";
 import { showSuccess, showError, showLoading, dismissToast } from "@/utils/toast";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -55,7 +65,7 @@ const ApplyForm = () => {
       fullName: "",
       age: undefined,
       city: "",
-      cnic: "", // Initialize CNIC field
+      cnic: "",
       contact: "",
       ideaTitle: "",
       shortDescription: "",
@@ -64,6 +74,8 @@ const ApplyForm = () => {
   });
 
   const [isDragging, setIsDragging] = useState(false);
+  const [showDuplicateCnicDialog, setShowDuplicateCnicDialog] = useState(false);
+  const [isSubmittingWithFee, setIsSubmittingWithFee] = useState(false);
   const videoRef = form.watch("video");
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
@@ -125,25 +137,11 @@ const ApplyForm = () => {
     form.setValue("cnic", formattedValue, { shouldValidate: true });
   };
 
-  const onSubmit = async (data: ApplyFormValues) => {
+  const submitApplication = async (data: ApplyFormValues, paymentStatus: string, paymentAmount: number, status: string) => {
     const loadingToastId = showLoading(translate("Submitting your application..."));
     let videoUrl = null;
 
     try {
-      // Check for duplicate CNIC or contact before proceeding
-      const { data: existingApplications, error: checkError } = await supabase
-        .from('applications')
-        .select('id')
-        .or(`cnic.eq.${data.cnic},contact.eq.${data.contact}`);
-
-      if (checkError) {
-        throw new Error(translate(`Error checking for existing applications: ${checkError.message}`));
-      }
-
-      if (existingApplications && existingApplications.length > 0) {
-        throw new Error(translate("An application with this CNIC or Email/Phone has already been registered."));
-      }
-
       // 1. Upload video to Supabase Storage
       if (data.video) {
         const fileExtension = data.video.name.split('.').pop();
@@ -178,6 +176,9 @@ const ApplyForm = () => {
           idea_title: data.ideaTitle,
           short_description: data.shortDescription,
           video_url: videoUrl,
+          status: status,
+          payment_status: paymentStatus,
+          payment_amount: paymentAmount,
         });
 
       if (insertError) {
@@ -191,7 +192,35 @@ const ApplyForm = () => {
       showError(error.message || translate("An unexpected error occurred."));
     } finally {
       dismissToast(loadingToastId);
+      setIsSubmittingWithFee(false); // Reset submission state
     }
+  };
+
+  const onSubmit = async (data: ApplyFormValues) => {
+    if (!isSubmittingWithFee) {
+      // First, check for duplicate CNIC
+      const { data: existingApplications, error: checkError } = await supabase
+        .from('applications')
+        .select('id')
+        .eq('cnic', data.cnic);
+
+      if (checkError) {
+        showError(translate(`Error checking for existing applications: ${checkError.message}`));
+        return;
+      }
+
+      if (existingApplications && existingApplications.length > 0) {
+        setShowDuplicateCnicDialog(true);
+        return; // Stop submission and wait for user's decision
+      }
+    }
+
+    // If no duplicate, or if user confirmed to proceed with fee
+    const paymentStatus = isSubmittingWithFee ? 'unpaid' : 'not_applicable';
+    const paymentAmount = isSubmittingWithFee ? 1500 : 0;
+    const status = isSubmittingWithFee ? 'duplicate_pending_payment' : 'pending';
+
+    await submitApplication(data, paymentStatus, paymentAmount, status);
   };
 
   return (
@@ -366,6 +395,31 @@ const ApplyForm = () => {
             </Button>
           </form>
         </Form>
+
+        <AlertDialog open={showDuplicateCnicDialog} onOpenChange={setShowDuplicateCnicDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{translate("Duplicate CNIC Detected")}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {translate("An application with this CNIC already exists. To submit a new idea with this CNIC, an additional fee of PKR 1500 will be required. Do you wish to proceed?")}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setShowDuplicateCnicDialog(false)}>
+                {translate("Cancel")}
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  setIsSubmittingWithFee(true);
+                  setShowDuplicateCnicDialog(false);
+                  form.handleSubmit(onSubmit)(); // Re-submit the form with the fee flag
+                }}
+              >
+                {translate("Proceed with Fee")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </section>
   );

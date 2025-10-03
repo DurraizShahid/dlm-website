@@ -89,6 +89,17 @@ export const translations = {
   "Made by MM Studios": { en: "Made by MM Studios", ur: "ایم ایم اسٹوڈیوز نے بنایا" },
   "English": { en: "English", ur: "انگریزی" },
   "Urdu": { en: "Urdu", ur: "اردو" },
-} as const;
+  "Submitting your application...": { en: "Submitting your application...", ur: "آپ کی درخواست جمع کی جا رہی ہے..." },
+  "Error checking for existing applications: ": { en: "Error checking for existing applications: ", ur: "موجودہ درخواستوں کی جانچ میں خرابی: " },
+  "An application with this CNIC or Email/Phone has already been registered.": { en: "An application with this CNIC or Email/Phone has already been registered.", ur: "اس شناختی کارڈ نمبر یا ای میل/فون کے ساتھ ایک درخواست پہلے ہی رجسٹر ہو چکی ہے۔" },
+  "Video upload failed: ": { en: "Video upload failed: ", ur: "ویڈیو اپ لوڈ ناکام ہو گیا: " },
+  "Application submission failed: ": { en: "Application submission failed: ", ur: "درخواست جمع کرانے میں ناکامی: " },
+  "Application submitted successfully!": { en: "Application submitted successfully!", ur: "درخواست کامیابی سے جمع ہو گئی!" },
+  "An unexpected error occurred.": { en: "An unexpected error occurred.", ur: "ایک غیر متوقع خرابی پیش آئی۔" },
+  "Duplicate CNIC Detected": { en: "Duplicate CNIC Detected", ur: "شناختی کارڈ نمبر پہلے سے موجود ہے" },
+  "An application with this CNIC already exists. To submit a new idea with this CNIC, an additional fee of PKR 1500 will be required. Do you wish to proceed?": { en: "An application with this CNIC already exists. To submit a new idea with this CNIC, an additional fee of PKR 1500 will be required. Do you wish to proceed?", ur: "اس شناختی کارڈ نمبر کے ساتھ ایک درخواست پہلے سے موجود ہے۔ اس شناختی کارڈ نمبر کے ساتھ ایک نیا خیال جمع کرانے کے لیے، 1500 روپے کی اضافی فیس درکار ہوگی۔ کیا آپ آگے بڑھنا چاہتے ہیں؟" },
+  "Cancel": { en: "Cancel", ur: "منسوخ کریں" },
+  "Proceed with Fee": { en: "Proceed with Fee", ur: "فیس کے ساتھ آگے بڑھیں" },
+};
 
 export type TranslationKeys = keyof typeof translations;
