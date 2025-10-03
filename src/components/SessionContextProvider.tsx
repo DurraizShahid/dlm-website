@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { getUserProfile, linkApplicationsToUser } from '@/integrations/supabase/auth'; // Import new function
+import { getUserProfile, linkApplicationsToUser } from '@/integrations/supabase/auth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { showLoading, dismissToast, showError } from '@/utils/toast';
 import { useLanguage } from '@/i18n/LanguageContext';
@@ -12,7 +12,7 @@ interface UserProfile {
   first_name: string | null;
   last_name: string | null;
   avatar_url: string | null;
-  role: string;
+  role: string | null; // Allow role to be null if profile is missing
 }
 
 interface SessionContextType {
@@ -43,7 +43,12 @@ export const SessionContextProvider = ({ children }: { children: ReactNode }) =>
 
         if (session?.user) {
           const profile = await getUserProfile(session.user.id);
-          setUser({ ...session.user, ...profile });
+          if (profile) {
+            setUser({ ...session.user, ...profile });
+          } else {
+            // If profile is null, still set user with basic session.user data and a default role
+            setUser({ ...session.user, first_name: null, last_name: null, avatar_url: null, role: 'user' });
+          }
           // Attempt to link any unlinked applications to this user
           if (session.user.email) {
             await linkApplicationsToUser(session.user.id, session.user.email);
@@ -73,7 +78,11 @@ export const SessionContextProvider = ({ children }: { children: ReactNode }) =>
         if (currentSession?.user) {
           try {
             const profile = await getUserProfile(currentSession.user.id);
-            setUser({ ...currentSession.user, ...profile });
+            if (profile) {
+              setUser({ ...currentSession.user, ...profile });
+            } else {
+              setUser({ ...currentSession.user, first_name: null, last_name: null, avatar_url: null, role: 'user' });
+            }
             // Attempt to link any unlinked applications to this user
             if (currentSession.user.email) {
               await linkApplicationsToUser(currentSession.user.id, currentSession.user.email);
@@ -82,7 +91,9 @@ export const SessionContextProvider = ({ children }: { children: ReactNode }) =>
             }
 
             if (location.pathname === '/login') {
-              if (profile.role === 'admin') {
+              // Use the role from the fetched profile, or default 'user' if profile was null
+              const userRole = profile?.role || 'user';
+              if (userRole === 'admin') {
                 navigate('/admin');
               } else {
                 navigate('/dashboard');

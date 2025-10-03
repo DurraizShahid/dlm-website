@@ -36,7 +36,16 @@ export const getUserProfile = async (userId: string) => {
     .select('first_name, last_name, avatar_url, role')
     .eq('id', userId)
     .single();
-  if (error) throw error;
+  
+  // If no data is found, data will be null and error will be like "PGRST100: Expected 1 row but found 0"
+  // We want to treat this as a missing profile, not a critical error that prevents loading.
+  if (error && error.code === 'PGRST100') { 
+    console.warn(`Profile not found for user ID: ${userId}. Error: ${error.message}`);
+    return null; // Return null if profile not found
+  }
+  if (error) {
+    throw error; // Re-throw other types of errors
+  }
   return data;
 };
 
