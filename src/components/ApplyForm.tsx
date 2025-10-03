@@ -195,8 +195,9 @@ const ApplyForm = () => {
   };
 
   const onSubmit = async (data: ApplyFormValues) => {
-    // Always check for duplicate CNIC first
+    console.log("onSubmit called with data:", data);
     const loadingToastId = showLoading(translate("Checking for existing applications..."));
+    
     try {
       const { data: existingApplications, error: checkError } = await supabase
         .from('applications')
@@ -204,20 +205,25 @@ const ApplyForm = () => {
         .eq('cnic', data.cnic);
 
       if (checkError) {
-        throw new Error(translate(`Error checking for existing applications: ${checkError.message}`));
+        console.error("Supabase check error:", checkError);
+        dismissToast(loadingToastId);
+        showError(translate(`Error checking for existing applications: ${checkError.message}`));
+        return; // Stop here on error
       }
 
       if (existingApplications && existingApplications.length > 0) {
-        dismissToast(loadingToastId); // Dismiss loading toast before showing dialog
+        console.log("Duplicate CNIC detected. Existing applications:", existingApplications);
+        dismissToast(loadingToastId);
         setShowDuplicateCnicDialog(true);
-        return; // Stop here, user needs to decide
+        return; // Crucial: stop the submission process
       }
 
-      // No duplicate found, proceed with normal submission
-      dismissToast(loadingToastId); // Dismiss loading toast
+      console.log("No duplicate CNIC found. Proceeding to submit application.");
+      dismissToast(loadingToastId);
       await submitApplication(data, 'not_applicable', 0, 'pending');
 
     } catch (error: any) {
+      console.error("Unexpected error during submission process:", error);
       dismissToast(loadingToastId);
       showError(error.message || translate("An unexpected error occurred."));
     }
