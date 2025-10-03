@@ -96,8 +96,8 @@ export const translations = {
   "Application submission failed: ": { en: "Application submission failed: ", ur: "درخواست جمع کرانے میں ناکامی: " },
   "Application submitted successfully!": { en: "Application submitted successfully!", ur: "درخواست کامیابی سے جمع ہو گئی!" },
   "An unexpected error occurred.": { en: "An unexpected error occurred.", ur: "ایک غیر متوقع خرابی پیش آئی۔" },
-  "Duplicate CNIC Detected": { en: "Duplicate CNIC Detected", ur: "شناختی کارڈ نمبر پہلے سے موجود ہے" },
-  "An application with this CNIC already exists. To submit a new idea with this CNIC, an additional fee of PKR 1500 will be required. Do you wish to proceed?": { en: "An application with this CNIC already exists. To submit a new idea with this CNIC, an additional fee of PKR 1500 will be required. Do you wish to proceed?", ur: "اس شناختی کارڈ نمبر کے ساتھ ایک درخواست پہلے سے موجود ہے۔ اس شناختی کارڈ نمبر کے ساتھ ایک نیا خیال جمع کرانے کے لیے، 1500 روپے کی اضافی فیس درکار ہوگی۔ کیا آپ آگے بڑھنا چاہتے ہیں؟" },
+  "Duplicate CNIC Detected": { en: "Duplicate CNIC Detected", ur: "شناختی کارڈ نمبر پہلے سے موجود ہے", romanUrdu: "Ye CNIC pehlay sei registered hai" },
+  "An application with this CNIC already exists. To submit a new idea with this CNIC, an additional fee of PKR 1500 will be required. Do you wish to proceed?": { en: "An application with this CNIC already exists. To submit a new idea with this CNIC, an additional fee of PKR 1500 will be required. Do you wish to proceed?", ur: "اس شناختی کارڈ نمبر کے ساتھ ایک درخواست پہلے ہی رجسٹر ہو چکی ہے۔ اس شناختی کارڈ نمبر کے ساتھ ایک نیا خیال جمع کرانے کے لیے، 1500 روپے کی اضافی فیس درکار ہوگی۔ کیا آپ آگے بڑھنا چاہتے ہیں؟", romanUrdu: "Aik Application iss CNIC ke sath pehlay sei mojood hai. Naya idea submit karne ke liye is CNIC par 1500 rupay ki izafi fee darkar hogi. Kya aap aagay barhna chahte hain?" },
   "Cancel": { en: "Cancel", ur: "منسوخ کریں" },
   "Proceed with Fee": { en: "Proceed with Fee", ur: "فیس کے ساتھ آگے بڑھیں" },
 };
