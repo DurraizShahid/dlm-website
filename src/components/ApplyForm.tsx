@@ -37,7 +37,7 @@ const ApplyForm = () => {
   // Regex for Pakistani CNIC format: XXXXX-XXXXXXX-X
   const cnicRegex = /^\d{5}-\d{7}-\d{1}$/;
 
-  // Zod schema for form validation - REMOVED PASSWORD FIELD
+  // Zod schema for form validation
   const applyFormSchema = z.object({
     fullName: z.string().min(2, { message: translate("Full Name must be at least 2 characters.") }),
     age: z.coerce.number().min(18, { message: translate("You must be at least 18 years old.") }).max(100, { message: translate("Age cannot exceed 100.") }),
@@ -137,7 +137,7 @@ const ApplyForm = () => {
     form.setValue("cnic", formattedValue, { shouldValidate: true });
   };
 
-  const submitApplication = async (data: ApplyFormValues, paymentStatus: string, paymentAmount: number, status: string, userId: string | null) => {
+  const submitApplication = async (data: ApplyFormValues, paymentStatus: string, paymentAmount: number, status: string) => {
     const loadingToastId = showLoading(translate("Submitting your application..."));
     let videoUrl = null;
 
@@ -179,14 +179,13 @@ const ApplyForm = () => {
           status: status,
           payment_status: paymentStatus,
           payment_amount: paymentAmount,
-          user_id: userId, // Link application to the user (can be null initially)
         });
 
       if (insertError) {
         throw new Error(translate(`Application submission failed: ${insertError.message}`));
       }
 
-      showSuccess(translate("Application submitted successfully! Please check your email/phone for a magic link to log in."));
+      showSuccess(translate("Application submitted successfully!"));
       form.reset(); // Reset form after successful submission
       handleRemoveVideo(); // Clear video field explicitly
     } catch (error: any) {
@@ -201,7 +200,6 @@ const ApplyForm = () => {
     const loadingToastId = showLoading(translate("Checking for existing applications..."));
     
     try {
-      // Check for duplicate CNIC in applications table
       const { data: existingApplications, error: checkError } = await supabase
         .from('applications')
         .select('id')
@@ -221,23 +219,9 @@ const ApplyForm = () => {
         return; // Crucial: stop the submission process
       }
 
-      // Determine if contact is email or phone
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      const isEmail = emailRegex.test(data.contact);
-
-      // Initiate passwordless sign-in/sign-up (magic link)
-      const { error: otpError } = await supabase.auth.signInWithOtp(
-        isEmail ? { email: data.contact } : { phone: data.contact }
-      );
-
-      if (otpError) {
-        throw new Error(translate(`Failed to send magic link: ${otpError.message}`));
-      }
-
-      // Submit application with user_id as null initially.
-      // The SessionContextProvider will link it once the user logs in via magic link.
-      dismissToast(loadingToastId); // Dismiss previous toast
-      await submitApplication(data, 'not_applicable', 0, 'pending', null); // Pass null for userId initially
+      console.log("No duplicate CNIC found. Proceeding to submit application.");
+      dismissToast(loadingToastId);
+      await submitApplication(data, 'not_applicable', 0, 'pending');
 
     } catch (error: any) {
       console.error("Unexpected error during submission process:", error);
@@ -328,7 +312,6 @@ const ApplyForm = () => {
                 </FormItem>
               )}
             />
-            {/* REMOVED PASSWORD FIELD */}
             <FormField
               control={form.control}
               name="ideaTitle"
@@ -448,11 +431,7 @@ const ApplyForm = () => {
                 onClick={async () => {
                   setShowDuplicateCnicDialog(false);
                   const currentFormData = form.getValues(); // Get current form values
-                  // For duplicate CNIC with fee, we still need a user_id.
-                  // If the user is already logged in, use their ID.
-                  // If not, we need to initiate OTP for them to log in and then link.
-                  // For now, we'll show an error and ask them to log in first for this specific flow.
-                  showError(translate("Please log in first to submit a duplicate application with a fee."));
+                  await submitApplication(currentFormData, 'unpaid', 1500, 'duplicate_pending_payment');
                 }}
               >
                 {translate("Proceed with Fee")}
