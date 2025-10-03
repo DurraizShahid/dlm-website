@@ -12,13 +12,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLanguage } from "@/i18n/LanguageContext";
-import { useSession } from "@/components/SessionContextProvider"; // New import
-import { signOut } from "@/integrations/supabase/auth"; // New import
-import { showError, showSuccess } from "@/utils/toast"; // New import
+import { useSession } from "@/components/SessionContextProvider";
+import { signOut } from "@/integrations/supabase/auth";
+import { showError, showSuccess } from "@/utils/toast";
 
 const Navbar = () => {
   const { language, setLanguage, translate } = useLanguage();
-  const { session, user, isAdmin, isLoading } = useSession(); // Get session and user info
+  const { session, user, isAdmin, isLoading } = useSession();
 
   const navLinks = [
     { name: translate("Home"), path: "/" },
@@ -35,6 +35,7 @@ const Navbar = () => {
     try {
       await signOut();
       showSuccess(translate("You have been signed out."));
+      window.location.reload(); // Force a full page reload after sign out
     } catch (error: any) {
       showError(error.message || translate("Failed to sign out."));
     }
