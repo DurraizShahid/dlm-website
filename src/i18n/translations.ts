@@ -13,7 +13,7 @@ export const translations = {
   "Submit your idea online": { en: "Submit your idea online", ur: "اپنا خیال آن لائن جمع کریں" },
   "Simple form, no jargon. Tell us your vision.": { en: "Simple form, no jargon. Tell us your vision.", ur: "آسان فارم، کوئی مشکل الفاظ نہیں۔ ہمیں اپنا مقصد بتائیں۔" },
   "Get shortlisted": { en: "Get shortlisted", ur: "شارٹ لسٹ ہوں" },
-  "Our team and community will vote for the best ideas.": { en: "Our team and community will vote for the best ideas.": { en: "Our team and community will vote for the best ideas.", ur: "ہماری ٹیم اور کمیونٹی بہترین افکار کے لیے ووٹ کرے گی۔" },
+  "Our team and community will vote for the best ideas.": { en: "Our team and community will vote for the best ideas.", ur: "ہماری ٹیم اور کمیونٹی بہترین افکار کے لیے ووٹ کرے گی۔" },
   "Win Das Lakh": { en: "Win Das Lakh", ur: "دس لاکھ جیتیں" },
   "Receive funding, mentorship, and recognition to grow.": { en: "Receive funding, mentorship, and recognition to grow.", ur: "فنڈنگ، رہنمائی، اور ترقی کے لیے پہچان حاصل کریں۔" },
   "Apply Now – Limited Spots": { en: "Apply Now – Limited Spots", ur: "ابھی درخواست دیں – محدود جگہیں" },
@@ -66,14 +66,14 @@ export const translations = {
   "Full Name": { en: "Full Name", ur: "مکمل نام" },
   "Full Name must be at least 2 characters.": { en: "Full Name must be at least 2 characters.", ur: "مکمل نام کم از کم 2 حروف کا ہونا چاہیے۔" },
   "Age": { en: "Age", ur: "عمر" },
-  "You must be at least 18 years old.": { en: "You must be at least 18 years old.", ur: "آپ کی عمر کم از کم 18 سال ہونی چاہیے۔" },
+  "You must be at least 18 years old.": { en: "You must be at least 18 years old.": { en: "You must be at least 18 years old.", ur: "آپ کی عمر کم از کم 18 سال ہونی چاہیے۔" },
   "Age cannot exceed 100.": { en: "Age cannot exceed 100.", ur: "عمر 100 سال سے زیادہ نہیں ہو سکتی۔" },
   "City": { en: "City", ur: "شہر" },
   "City must be at least 2 characters.": { en: "City must be at least 2 characters.", ur: "شہر کم از کم 2 حروف کا ہونا چاہیے۔" },
   "CNIC": { en: "CNIC", ur: "شناختی کارڈ نمبر" },
   "Please enter a valid Pakistani CNIC number (e.g., 12345-1234567-1).": { en: "Please enter a valid Pakistani CNIC number (e.g., 12345-1234567-1).", ur: "برائے مہربانی ایک درست پاکستانی شناختی کارڈ نمبر درج کریں (مثلاً 12345-1234567-1)۔" },
   "Email / Phone": { en: "Email / Phone", ur: "ای میل / فون" },
-  "Please enter a valid email or phone number.": { en: "Please enter a valid email or phone number.": { en: "Please enter a valid email or phone number.", ur: "برائے مہربانی ایک درست ای میل یا فون نمبر درج کریں۔" },
+  "Please enter a valid email or phone number.": { en: "Please enter a valid email or phone number.", ur: "برائے مہربانی ایک درست ای میل یا فون نمبر درج کریں۔" },
   "Idea Title": { en: "Idea Title", ur: "خیال کا عنوان" },
   "Idea Title must be at least 5 characters.": { en: "Idea Title must be at least 5 characters.", ur: "خیال کا عنوان کم از کم 5 حروف کا ہونا چاہیے۔" },
   "Short Description (300-500 characters)": { en: "Short Description (300-500 characters)", ur: "مختصر تفصیل (300-500 حروف)" },
@@ -137,7 +137,8 @@ export const translations = {
   "New Password": { en: "New Password", ur: "نیا پاس ورڈ" },
   "Your new password": { en: "Your new password", ur: "آپ کا نیا پاس ورڈ" },
   "Update Password": { en: "Update Password", ur: "پاس ورڈ اپ ڈیٹ کریں" },
-  "Your password has been updated.": { en: "Your password has been updated.", ur: "آپ کا پاس ورڈ اپ ڈیٹ ہو گیا ہے۔" },
+  "Your password has been updated.": { en: "Your password has been updated.": { en: "Your password has been updated.", ur: "آپ کا پاس ورڈ اپ ڈیٹ ہو گیا ہے۔" },
+  "Account created, but user not immediately signed in. Please check your email to confirm and then log in.": { en: "Account created, but user not immediately signed in. Please check your email to confirm and then log in.", ur: "اکاؤنٹ بن گیا ہے، لیکن صارف فوری طور پر سائن ان نہیں ہوا۔ براہ کرم تصدیق کے لیے اپنا ای میل چیک کریں اور پھر لاگ ان کریں۔" }
 };
 
 export type TranslationKeys = keyof typeof translations;

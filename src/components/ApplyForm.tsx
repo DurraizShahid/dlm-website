@@ -210,7 +210,7 @@ const ApplyForm = () => {
 
       if (!userId) {
         // If no user is logged in, attempt to sign up the user
-        const { data: signUpData, error: signUpError } = await signUpWithEmail(data.contact, data.password, {
+        const { data: signUpResult, error: signUpError } = await signUpWithEmail(data.contact, data.password, {
           data: {
             first_name: data.fullName.split(' ')[0],
             last_name: data.fullName.split(' ').slice(1).join(' '),
@@ -226,8 +226,16 @@ const ApplyForm = () => {
           }
           throw new Error(signUpError.message);
         }
-        userId = signUpData.user?.id;
-        if (!userId) throw new Error("User ID not found after sign up.");
+        
+        userId = signUpResult?.user?.id; // Safely access user.id
+        if (!userId) {
+          // This could happen if email confirmation is pending and user is not immediately signed in
+          showError(translate("Account created, but user not immediately signed in. Please check your email to confirm and then log in."));
+          dismissToast(loadingToastId);
+          form.reset();
+          handleRemoveVideo();
+          return; // Stop submission
+        }
       }
 
       // Check for duplicate CNIC in applications table
@@ -475,10 +483,6 @@ const ApplyForm = () => {
                 onClick={async () => {
                   setShowDuplicateCnicDialog(false);
                   const currentFormData = form.getValues(); // Get current form values
-                  // For duplicate CNIC with fee, we still need a user_id.
-                  // If the user is already logged in, use their ID.
-                  // If not, they would have just signed up in the onSubmit, so use that ID.
-                  // This logic needs to be robust. For now, assuming a user is logged in or just signed up.
                   const { data: { user: currentUser } } = await supabase.auth.getUser();
                   if (currentUser?.id) {
                     await submitApplication(currentFormData, 'unpaid', 1500, 'duplicate_pending_payment', currentUser.id);
