@@ -31,7 +31,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client"; // Import Supabase client
 
 const ApplyForm = () => {
-  const { translate, language } = useLanguage();
+  const { translate } = useLanguage();
 
   // Regex for Pakistani CNIC format: XXXXX-XXXXXXX-X
   const cnicRegex = /^\d{5}-\d{7}-\d{1}$/;
@@ -405,21 +405,9 @@ const ApplyForm = () => {
         <AlertDialog open={showDuplicateCnicDialog} onOpenChange={setShowDuplicateCnicDialog}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>
-                {translate("Duplicate CNIC Detected")}
-                {language === 'en' && (
-                  <span className="block text-sm sm:text-md italic opacity-90 text-gray-600 mt-1">
-                    {translate("Duplicate CNIC Detected", "romanUrdu")}
-                  </span>
-                )}
-              </AlertDialogTitle>
+              <AlertDialogTitle>{translate("Duplicate CNIC Detected")}</AlertDialogTitle>
               <AlertDialogDescription>
                 {translate("An application with this CNIC already exists. To submit a new idea with this CNIC, an additional fee of PKR 1500 will be required. Do you wish to proceed?")}
-                {language === 'en' && (
-                  <span className="block text-sm sm:text-md italic opacity-90 text-gray-600 mt-1">
-                    {translate("An application with this CNIC already exists. To submit a new idea with this CNIC, an additional fee of PKR 1500 will be required. Do you wish to proceed?", "romanUrdu")}
-                  </span>
-                )}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
