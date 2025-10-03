@@ -75,7 +75,6 @@ const ApplyForm = () => {
 
   const [isDragging, setIsDragging] = useState(false);
   const [showDuplicateCnicDialog, setShowDuplicateCnicDialog] = useState(false);
-  const [isSubmittingWithFee, setIsSubmittingWithFee] = useState(false);
   const videoRef = form.watch("video");
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
@@ -192,35 +191,36 @@ const ApplyForm = () => {
       showError(error.message || translate("An unexpected error occurred."));
     } finally {
       dismissToast(loadingToastId);
-      setIsSubmittingWithFee(false); // Reset submission state
     }
   };
 
   const onSubmit = async (data: ApplyFormValues) => {
-    if (!isSubmittingWithFee) {
-      // First, check for duplicate CNIC
+    // Always check for duplicate CNIC first
+    const loadingToastId = showLoading(translate("Checking for existing applications..."));
+    try {
       const { data: existingApplications, error: checkError } = await supabase
         .from('applications')
         .select('id')
         .eq('cnic', data.cnic);
 
       if (checkError) {
-        showError(translate(`Error checking for existing applications: ${checkError.message}`));
-        return;
+        throw new Error(translate(`Error checking for existing applications: ${checkError.message}`));
       }
 
       if (existingApplications && existingApplications.length > 0) {
+        dismissToast(loadingToastId); // Dismiss loading toast before showing dialog
         setShowDuplicateCnicDialog(true);
-        return; // Stop submission and wait for user's decision
+        return; // Stop here, user needs to decide
       }
+
+      // No duplicate found, proceed with normal submission
+      dismissToast(loadingToastId); // Dismiss loading toast
+      await submitApplication(data, 'not_applicable', 0, 'pending');
+
+    } catch (error: any) {
+      dismissToast(loadingToastId);
+      showError(error.message || translate("An unexpected error occurred."));
     }
-
-    // If no duplicate, or if user confirmed to proceed with fee
-    const paymentStatus = isSubmittingWithFee ? 'unpaid' : 'not_applicable';
-    const paymentAmount = isSubmittingWithFee ? 1500 : 0;
-    const status = isSubmittingWithFee ? 'duplicate_pending_payment' : 'pending';
-
-    await submitApplication(data, paymentStatus, paymentAmount, status);
   };
 
   return (
@@ -409,10 +409,10 @@ const ApplyForm = () => {
                 {translate("Cancel")}
               </AlertDialogCancel>
               <AlertDialogAction
-                onClick={() => {
-                  setIsSubmittingWithFee(true);
+                onClick={async () => {
                   setShowDuplicateCnicDialog(false);
-                  form.handleSubmit(onSubmit)(); // Re-submit the form with the fee flag
+                  const currentFormData = form.getValues(); // Get current form values
+                  await submitApplication(currentFormData, 'unpaid', 1500, 'duplicate_pending_payment');
                 }}
               >
                 {translate("Proceed with Fee")}
