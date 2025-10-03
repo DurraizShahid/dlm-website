@@ -29,6 +29,7 @@ import { UploadCloud, FileText, XCircle } from "lucide-react";
 import { showSuccess, showError, showLoading, dismissToast } from "@/utils/toast";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client"; // Import Supabase client
+import { signUpWithEmail } from "@/integrations/supabase/auth"; // New import for signUp
 import { translations } from "@/i18n/translations"; // Import translations to access romanUrdu
 
 const ApplyForm = () => {
@@ -51,6 +52,7 @@ const ApplyForm = () => {
       },
       { message: translate("Please enter a valid email or phone number.") }
     ),
+    password: z.string().min(6, { message: translate("Password must be at least 6 characters.") }), // New password field
     ideaTitle: z.string().min(5, { message: translate("Idea Title must be at least 5 characters.") }),
     shortDescription: z.string().min(300, { message: translate("Description must be at least 300 characters.") }).max(500, { message: translate("Description cannot exceed 500 characters.") }),
     video: z.instanceof(File, { message: translate("Video upload is required.") })
@@ -68,6 +70,7 @@ const ApplyForm = () => {
       city: "",
       cnic: "",
       contact: "",
+      password: "", // Default value for new password field
       ideaTitle: "",
       shortDescription: "",
       video: undefined,
@@ -137,7 +140,7 @@ const ApplyForm = () => {
     form.setValue("cnic", formattedValue, { shouldValidate: true });
   };
 
-  const submitApplication = async (data: ApplyFormValues, paymentStatus: string, paymentAmount: number, status: string) => {
+  const submitApplication = async (data: ApplyFormValues, paymentStatus: string, paymentAmount: number, status: string, userId: string) => {
     const loadingToastId = showLoading(translate("Submitting your application..."));
     let videoUrl = null;
 
@@ -179,6 +182,7 @@ const ApplyForm = () => {
           status: status,
           payment_status: paymentStatus,
           payment_amount: paymentAmount,
+          user_id: userId, // Link application to the user
         });
 
       if (insertError) {
@@ -200,6 +204,33 @@ const ApplyForm = () => {
     const loadingToastId = showLoading(translate("Checking for existing applications..."));
     
     try {
+      // Check if user already exists in auth.users
+      const { data: { user: existingAuthUser }, error: authUserError } = await supabase.auth.getUser();
+      let userId = existingAuthUser?.id;
+
+      if (!userId) {
+        // If no user is logged in, attempt to sign up the user
+        const { data: signUpData, error: signUpError } = await signUpWithEmail(data.contact, data.password, {
+          data: {
+            first_name: data.fullName.split(' ')[0],
+            last_name: data.fullName.split(' ').slice(1).join(' '),
+          }
+        });
+
+        if (signUpError) {
+          // If signup fails, check if it's due to an existing user
+          if (signUpError.message.includes('User already registered')) {
+            dismissToast(loadingToastId);
+            showError(translate("An application with this CNIC or Email/Phone has already been registered. Please log in or use a different contact."));
+            return;
+          }
+          throw new Error(signUpError.message);
+        }
+        userId = signUpData.user?.id;
+        if (!userId) throw new Error("User ID not found after sign up.");
+      }
+
+      // Check for duplicate CNIC in applications table
       const { data: existingApplications, error: checkError } = await supabase
         .from('applications')
         .select('id')
@@ -221,7 +252,7 @@ const ApplyForm = () => {
 
       console.log("No duplicate CNIC found. Proceeding to submit application.");
       dismissToast(loadingToastId);
-      await submitApplication(data, 'not_applicable', 0, 'pending');
+      await submitApplication(data, 'not_applicable', 0, 'pending', userId);
 
     } catch (error: any) {
       console.error("Unexpected error during submission process:", error);
@@ -307,6 +338,19 @@ const ApplyForm = () => {
                   <FormLabel>{translate("Email / Phone")}</FormLabel>
                   <FormControl>
                     <Input placeholder="example@email.com or +923001234567" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{translate("Password")}</FormLabel>
+                  <FormControl>
+                    <Input type="password" placeholder={translate("Your password")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -431,7 +475,16 @@ const ApplyForm = () => {
                 onClick={async () => {
                   setShowDuplicateCnicDialog(false);
                   const currentFormData = form.getValues(); // Get current form values
-                  await submitApplication(currentFormData, 'unpaid', 1500, 'duplicate_pending_payment');
+                  // For duplicate CNIC with fee, we still need a user_id.
+                  // If the user is already logged in, use their ID.
+                  // If not, they would have just signed up in the onSubmit, so use that ID.
+                  // This logic needs to be robust. For now, assuming a user is logged in or just signed up.
+                  const { data: { user: currentUser } } = await supabase.auth.getUser();
+                  if (currentUser?.id) {
+                    await submitApplication(currentFormData, 'unpaid', 1500, 'duplicate_pending_payment', currentUser.id);
+                  } else {
+                    showError(translate("User not authenticated. Please log in or try again."));
+                  }
                 }}
               >
                 {translate("Proceed with Fee")}
