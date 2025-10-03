@@ -29,7 +29,6 @@ import { UploadCloud, FileText, XCircle } from "lucide-react";
 import { showSuccess, showError, showLoading, dismissToast } from "@/utils/toast";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client"; // Import Supabase client
-import { signUpWithEmail } from "@/integrations/supabase/auth"; // New import for signUp
 import { translations } from "@/i18n/translations"; // Import translations to access romanUrdu
 
 const ApplyForm = () => {
@@ -38,7 +37,7 @@ const ApplyForm = () => {
   // Regex for Pakistani CNIC format: XXXXX-XXXXXXX-X
   const cnicRegex = /^\d{5}-\d{7}-\d{1}$/;
 
-  // Zod schema for form validation
+  // Zod schema for form validation - REMOVED PASSWORD FIELD
   const applyFormSchema = z.object({
     fullName: z.string().min(2, { message: translate("Full Name must be at least 2 characters.") }),
     age: z.coerce.number().min(18, { message: translate("You must be at least 18 years old.") }).max(100, { message: translate("Age cannot exceed 100.") }),
@@ -52,7 +51,6 @@ const ApplyForm = () => {
       },
       { message: translate("Please enter a valid email or phone number.") }
     ),
-    password: z.string().min(6, { message: translate("Password must be at least 6 characters.") }), // New password field
     ideaTitle: z.string().min(5, { message: translate("Idea Title must be at least 5 characters.") }),
     shortDescription: z.string().min(300, { message: translate("Description must be at least 300 characters.") }).max(500, { message: translate("Description cannot exceed 500 characters.") }),
     video: z.instanceof(File, { message: translate("Video upload is required.") })
@@ -70,7 +68,6 @@ const ApplyForm = () => {
       city: "",
       cnic: "",
       contact: "",
-      password: "", // Default value for new password field
       ideaTitle: "",
       shortDescription: "",
       video: undefined,
@@ -140,7 +137,7 @@ const ApplyForm = () => {
     form.setValue("cnic", formattedValue, { shouldValidate: true });
   };
 
-  const submitApplication = async (data: ApplyFormValues, paymentStatus: string, paymentAmount: number, status: string, userId: string) => {
+  const submitApplication = async (data: ApplyFormValues, paymentStatus: string, paymentAmount: number, status: string, userId: string | null) => {
     const loadingToastId = showLoading(translate("Submitting your application..."));
     let videoUrl = null;
 
@@ -182,14 +179,14 @@ const ApplyForm = () => {
           status: status,
           payment_status: paymentStatus,
           payment_amount: paymentAmount,
-          user_id: userId, // Link application to the user
+          user_id: userId, // Link application to the user (can be null initially)
         });
 
       if (insertError) {
         throw new Error(translate(`Application submission failed: ${insertError.message}`));
       }
 
-      showSuccess(translate("Application submitted successfully!"));
+      showSuccess(translate("Application submitted successfully! Please check your email/phone for a magic link to log in."));
       form.reset(); // Reset form after successful submission
       handleRemoveVideo(); // Clear video field explicitly
     } catch (error: any) {
@@ -204,40 +201,6 @@ const ApplyForm = () => {
     const loadingToastId = showLoading(translate("Checking for existing applications..."));
     
     try {
-      // Check if user already exists in auth.users
-      const { data: { user: existingAuthUser }, error: authUserError } = await supabase.auth.getUser();
-      let userId = existingAuthUser?.id;
-
-      if (!userId) {
-        // If no user is logged in, attempt to sign up the user
-        const { data: signUpResult, error: signUpError } = await signUpWithEmail(data.contact, data.password, {
-          data: {
-            first_name: data.fullName.split(' ')[0],
-            last_name: data.fullName.split(' ').slice(1).join(' '),
-          }
-        });
-
-        if (signUpError) {
-          // If signup fails, check if it's due to an existing user
-          if (signUpError.message.includes('User already registered')) {
-            dismissToast(loadingToastId);
-            showError(translate("An application with this CNIC or Email/Phone has already been registered. Please log in or use a different contact."));
-            return;
-          }
-          throw new Error(signUpError.message);
-        }
-        
-        userId = signUpResult?.user?.id; // Safely access user.id
-        if (!userId) {
-          // This could happen if email confirmation is pending and user is not immediately signed in
-          showError(translate("Account created, but user not immediately signed in. Please check your email to confirm and then log in."));
-          dismissToast(loadingToastId);
-          form.reset();
-          handleRemoveVideo();
-          return; // Stop submission
-        }
-      }
-
       // Check for duplicate CNIC in applications table
       const { data: existingApplications, error: checkError } = await supabase
         .from('applications')
@@ -258,9 +221,23 @@ const ApplyForm = () => {
         return; // Crucial: stop the submission process
       }
 
-      console.log("No duplicate CNIC found. Proceeding to submit application.");
-      dismissToast(loadingToastId);
-      await submitApplication(data, 'not_applicable', 0, 'pending', userId);
+      // Determine if contact is email or phone
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const isEmail = emailRegex.test(data.contact);
+
+      // Initiate passwordless sign-in/sign-up (magic link)
+      const { error: otpError } = await supabase.auth.signInWithOtp(
+        isEmail ? { email: data.contact } : { phone: data.contact }
+      );
+
+      if (otpError) {
+        throw new Error(translate(`Failed to send magic link: ${otpError.message}`));
+      }
+
+      // Submit application with user_id as null initially.
+      // The SessionContextProvider will link it once the user logs in via magic link.
+      dismissToast(loadingToastId); // Dismiss previous toast
+      await submitApplication(data, 'not_applicable', 0, 'pending', null); // Pass null for userId initially
 
     } catch (error: any) {
       console.error("Unexpected error during submission process:", error);
@@ -351,19 +328,7 @@ const ApplyForm = () => {
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{translate("Password")}</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder={translate("Your password")} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* REMOVED PASSWORD FIELD */}
             <FormField
               control={form.control}
               name="ideaTitle"
@@ -483,12 +448,11 @@ const ApplyForm = () => {
                 onClick={async () => {
                   setShowDuplicateCnicDialog(false);
                   const currentFormData = form.getValues(); // Get current form values
-                  const { data: { user: currentUser } } = await supabase.auth.getUser();
-                  if (currentUser?.id) {
-                    await submitApplication(currentFormData, 'unpaid', 1500, 'duplicate_pending_payment', currentUser.id);
-                  } else {
-                    showError(translate("User not authenticated. Please log in or try again."));
-                  }
+                  // For duplicate CNIC with fee, we still need a user_id.
+                  // If the user is already logged in, use their ID.
+                  // If not, we need to initiate OTP for them to log in and then link.
+                  // For now, we'll show an error and ask them to log in first for this specific flow.
+                  showError(translate("Please log in first to submit a duplicate application with a fee."));
                 }}
               >
                 {translate("Proceed with Fee")}

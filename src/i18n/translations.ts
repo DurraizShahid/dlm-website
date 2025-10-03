@@ -66,7 +66,7 @@ export const translations = {
   "Full Name": { en: "Full Name", ur: "مکمل نام" },
   "Full Name must be at least 2 characters.": { en: "Full Name must be at least 2 characters.", ur: "مکمل نام کم از کم 2 حروف کا ہونا چاہیے۔" },
   "Age": { en: "Age", ur: "عمر" },
-  "You must be at least 18 years old.": { en: "You must be at least 18 years old.": { en: "You must be at least 18 years old.", ur: "آپ کی عمر کم از کم 18 سال ہونی چاہیے۔" },
+  "You must be at least 18 years old.": { en: "You must be at least 18 years old.", ur: "آپ کی عمر کم از کم 18 سال ہونی چاہیے۔" },
   "Age cannot exceed 100.": { en: "Age cannot exceed 100.", ur: "عمر 100 سال سے زیادہ نہیں ہو سکتی۔" },
   "City": { en: "City", ur: "شہر" },
   "City must be at least 2 characters.": { en: "City must be at least 2 characters.", ur: "شہر کم از کم 2 حروف کا ہونا چاہیے۔" },
@@ -137,8 +137,10 @@ export const translations = {
   "New Password": { en: "New Password", ur: "نیا پاس ورڈ" },
   "Your new password": { en: "Your new password", ur: "آپ کا نیا پاس ورڈ" },
   "Update Password": { en: "Update Password", ur: "پاس ورڈ اپ ڈیٹ کریں" },
-  "Your password has been updated.": { en: "Your password has been updated.": { en: "Your password has been updated.", ur: "آپ کا پاس ورڈ اپ ڈیٹ ہو گیا ہے۔" },
-  "Account created, but user not immediately signed in. Please check your email to confirm and then log in.": { en: "Account created, but user not immediately signed in. Please check your email to confirm and then log in.", ur: "اکاؤنٹ بن گیا ہے، لیکن صارف فوری طور پر سائن ان نہیں ہوا۔ براہ کرم تصدیق کے لیے اپنا ای میل چیک کریں اور پھر لاگ ان کریں۔" }
+  "Your password has been updated.": { en: "Your password has been updated.", ur: "آپ کا پاس ورڈ اپ ڈیٹ ہو گیا ہے۔" },
+  "Account created, but user not immediately signed in. Please check your email to confirm and then log in.": { en: "Account created, but user not immediately signed in. Please check your email to confirm and then log in.", ur: "اکاؤنٹ بن گیا ہے، لیکن صارف فوری طور پر سائن ان نہیں ہوا۔ براہ کرم تصدیق کے لیے اپنا ای میل چیک کریں اور پھر لاگ ان کریں۔" },
+  "Application submitted successfully! Please check your email/phone for a magic link to log in.": { en: "Application submitted successfully! Please check your email/phone for a magic link to log in.", ur: "درخواست کامیابی سے جمع ہو گئی! براہ کرم لاگ ان کرنے کے لیے اپنے ای میل/فون پر جادوئی لنک چیک کریں۔" },
+  "Please log in first to submit a duplicate application with a fee.": { en: "Please log in first to submit a duplicate application with a fee.", ur: "فیس کے ساتھ ایک ڈپلیکیٹ درخواست جمع کرانے کے لیے براہ کرم پہلے لاگ ان کریں۔" }
 };
 
 export type TranslationKeys = keyof typeof translations;

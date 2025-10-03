@@ -39,3 +39,15 @@ export const getUserProfile = async (userId: string) => {
   if (error) throw error;
   return data;
 };
+
+// NEW FUNCTION: Link unlinked applications to a user
+export const linkApplicationsToUser = async (userId: string, contact: string) => {
+  const { data, error } = await supabase
+    .from('applications')
+    .update({ user_id: userId })
+    .eq('contact', contact)
+    .is('user_id', null); // Only update applications that are not yet linked
+
+  if (error) throw error;
+  return data;
+};

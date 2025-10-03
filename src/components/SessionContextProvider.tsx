@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { getUserProfile } from '@/integrations/supabase/auth';
+import { getUserProfile, linkApplicationsToUser } from '@/integrations/supabase/auth'; // Import new function
 import { useNavigate, useLocation } from 'react-router-dom';
 import { showLoading, dismissToast, showError } from '@/utils/toast';
 import { useLanguage } from '@/i18n/LanguageContext';
@@ -44,12 +44,18 @@ export const SessionContextProvider = ({ children }: { children: ReactNode }) =>
         if (session?.user) {
           const profile = await getUserProfile(session.user.id);
           setUser({ ...session.user, ...profile });
+          // Attempt to link any unlinked applications to this user
+          if (session.user.email) {
+            await linkApplicationsToUser(session.user.id, session.user.email);
+          } else if (session.user.phone) {
+            await linkApplicationsToUser(session.user.id, session.user.phone);
+          }
         } else {
           setUser(null);
         }
       } catch (error: any) {
         console.error("Error fetching session:", error.message);
-        showError(translate("Failed to load session. Please try again."));
+        showError(error.message || translate("Failed to load session. Please try again."));
         setSession(null);
         setUser(null);
       } finally {
@@ -68,6 +74,13 @@ export const SessionContextProvider = ({ children }: { children: ReactNode }) =>
           try {
             const profile = await getUserProfile(currentSession.user.id);
             setUser({ ...currentSession.user, ...profile });
+            // Attempt to link any unlinked applications to this user
+            if (currentSession.user.email) {
+              await linkApplicationsToUser(currentSession.user.id, currentSession.user.email);
+            } else if (currentSession.user.phone) {
+              await linkApplicationsToUser(currentSession.user.id, currentSession.user.phone);
+            }
+
             if (location.pathname === '/login') {
               if (profile.role === 'admin') {
                 navigate('/admin');
@@ -77,7 +90,7 @@ export const SessionContextProvider = ({ children }: { children: ReactNode }) =>
             }
           } catch (profileError: any) {
             console.error("Error fetching user profile:", profileError.message);
-            showError(translate("Failed to load user profile."));
+            showError(profileError.message || translate("Failed to load user profile."));
             setUser(null);
           }
         }
