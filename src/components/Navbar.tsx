@@ -12,14 +12,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLanguage } from "@/i18n/LanguageContext";
-import { useSession } from "@/components/SessionContextProvider"; // Import useSession
-import { supabase } from "@/integrations/supabase/client"; // Import supabase client
+import { useSession } from "@/components/SessionContextProvider";
+import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
 
 const Navbar = () => {
   const { language, setLanguage, translate } = useLanguage();
-  const { session, isAdmin } = useSession(); // Get session and isAdmin from context
-  const navigate = useNavigate();
+  const { session, isAdmin } = useSession();
+  const navigate = useNavigate(); // Keep navigate for other potential uses, though not for logout redirect
 
   const navLinks = [
     { name: translate("Home"), path: "/" },
@@ -38,7 +38,7 @@ const Navbar = () => {
       showError(translate(`Logout failed: ${error.message}`));
     } else {
       showSuccess(translate("Logged out successfully!"));
-      navigate('/login'); // Redirect to login page after logout
+      // Navigation is now handled by SessionContextProvider's onAuthStateChange listener
     }
   };
 
@@ -60,7 +60,7 @@ const Navbar = () => {
               {link.name}
             </Link>
           ))}
-          {isAdmin && ( // Show Admin Dashboard link only if user is admin
+          {isAdmin && (
             <Link to="/admin">
               <Button variant="ghost" className="text-sm font-medium text-gray-700 transition-colors hover:text-green-700 dark:text-gray-300 dark:hover:text-green-400">
                 <LayoutDashboard className="mr-2 h-4 w-4" /> {translate("Admin Dashboard")}
