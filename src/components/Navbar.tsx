@@ -1,10 +1,10 @@
 "use client";
 
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Globe, LogIn, LogOut, LayoutDashboard } from "lucide-react";
+import { Menu, Globe } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,34 +12,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLanguage } from "@/i18n/LanguageContext";
-import { useSession } from "@/components/SessionContextProvider";
-import { supabase } from "@/integrations/supabase/client";
-import { showSuccess, showError } from "@/utils/toast";
 
 const Navbar = () => {
   const { language, setLanguage, translate } = useLanguage();
-  const { session, isAdmin } = useSession();
-  const navigate = useNavigate(); // Keep navigate for other potential uses, though not for logout redirect
 
   const navLinks = [
     { name: translate("Home"), path: "/" },
     { name: translate("About"), path: "/about" },
     { name: translate("How It Works"), path: "/how-it-works" },
     { name: translate("FAQ"), path: "/faq" },
+    { name: translate("Apply"), path: "/apply" },
+    { name: translate("Dashboard"), path: "/dashboard" },
   ];
 
   const handleLanguageChange = (newLang: 'en' | 'ur') => {
     setLanguage(newLang);
-  };
-
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      showError(translate(`Logout failed: ${error.message}`));
-    } else {
-      showSuccess(translate("Logged out successfully!"));
-      // Navigation is now handled by SessionContextProvider's onAuthStateChange listener
-    }
   };
 
   return (
@@ -60,29 +47,8 @@ const Navbar = () => {
               {link.name}
             </Link>
           ))}
-          {isAdmin && (
-            <Link to="/admin">
-              <Button variant="ghost" className="text-sm font-medium text-gray-700 transition-colors hover:text-green-700 dark:text-gray-300 dark:hover:text-green-400">
-                <LayoutDashboard className="mr-2 h-4 w-4" /> {translate("Admin Dashboard")}
-              </Button>
-            </Link>
-          )}
-          <Link to="/apply">
-            <Button className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold px-4 py-2 rounded-full text-sm shadow-md transition-all duration-300 ease-in-out hover:scale-105">
-              {translate("Apply")}
-            </Button>
-          </Link>
-          {session ? (
-            <Button variant="outline" size="sm" onClick={handleLogout} className="flex items-center gap-2">
-              <LogOut className="h-4 w-4" /> {translate("Logout")}
-            </Button>
-          ) : (
-            <Link to="/login">
-              <Button variant="outline" size="sm" className="flex items-center gap-2">
-                <LogIn className="h-4 w-4" /> {translate("Login")}
-              </Button>
-            </Link>
-          )}
+          
+          {/* Language Selector */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon">
@@ -137,29 +103,6 @@ const Navbar = () => {
                     {link.name}
                   </Link>
                 ))}
-                {isAdmin && (
-                  <Link to="/admin">
-                    <Button variant="ghost" className="text-lg font-medium text-gray-700 hover:text-green-700 dark:text-gray-300 dark:hover:text-green-400 w-full justify-start">
-                      <LayoutDashboard className="mr-2 h-5 w-5" /> {translate("Admin Dashboard")}
-                    </Button>
-                  </Link>
-                )}
-                <Link to="/apply">
-                  <Button className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold px-4 py-2 rounded-full text-lg shadow-md transition-all duration-300 ease-in-out hover:scale-105 mt-4 w-full">
-                    {translate("Apply")}
-                  </Button>
-                </Link>
-                {session ? (
-                  <Button variant="outline" size="lg" onClick={handleLogout} className="flex items-center gap-2 mt-4 w-full">
-                    <LogOut className="h-5 w-5" /> {translate("Logout")}
-                  </Button>
-                ) : (
-                  <Link to="/login">
-                    <Button variant="outline" size="lg" className="flex items-center gap-2 mt-4 w-full">
-                      <LogIn className="h-5 w-5" /> {translate("Login")}
-                    </Button>
-                  </Link>
-                )}
               </nav>
             </SheetContent>
           </Sheet>

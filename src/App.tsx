@@ -8,15 +8,29 @@ import About from "./pages/About";
 import HowItWorks from "./pages/HowItWorks";
 import FAQ from "./pages/FAQ";
 import Apply from "./pages/Apply";
+import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import Navbar from "./components/Navbar";
-import Login from "./pages/Login"; // Import Login page
-import AdminDashboard from "./pages/AdminDashboard"; // Import AdminDashboard
 import { LanguageProvider } from "./i18n/LanguageContext";
-import { SessionContextProvider } from "./components/SessionContextProvider"; // Import SessionContextProvider
-import ProtectedRoute from "./components/ProtectedRoute"; // Import ProtectedRoute
 
 const queryClient = new QueryClient();
+
+const AppContent = () => {
+  return (
+    <>
+      <Navbar />
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/how-it-works" element={<HowItWorks />} />
+        <Route path="/faq" element={<FAQ />} />
+        <Route path="/apply" element={<Apply />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -24,28 +38,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <LanguageProvider>
-        <SessionContextProvider> {/* Wrap with SessionContextProvider */}
-          <BrowserRouter>
-            <Navbar /> {/* Moved Navbar inside SessionContextProvider */}
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/how-it-works" element={<HowItWorks />} />
-              <Route path="/faq" element={<FAQ />} />
-              <Route path="/apply" element={<Apply />} />
-              <Route path="/login" element={<Login />} /> {/* Add Login route */}
-              <Route 
-                path="/admin" 
-                element={
-                  <ProtectedRoute adminOnly={true}>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                } 
-              /> {/* Add Protected Admin Dashboard route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </SessionContextProvider>
+        <BrowserRouter>
+          <AppContent />
+        </BrowserRouter>
       </LanguageProvider>
     </TooltipProvider>
   </QueryClientProvider>
