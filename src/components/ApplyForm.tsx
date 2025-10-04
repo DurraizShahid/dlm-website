@@ -28,11 +28,13 @@ import {
 import { UploadCloud, FileText, XCircle } from "lucide-react";
 import { showSuccess, showError, showLoading, dismissToast } from "@/utils/toast";
 import { useLanguage } from "@/i18n/LanguageContext";
-import { supabase } from "@/integrations/supabase/client"; // Import Supabase client
-import { translations } from "@/i18n/translations"; // Import translations to access romanUrdu
+import { supabase } from "@/integrations/supabase/client";
+import { translations } from "@/i18n/translations";
+import { useSession } from "@/components/SessionContextProvider"; // Import useSession
 
 const ApplyForm = () => {
   const { translate, language } = useLanguage();
+  const { user } = useSession(); // Get the current user from session context
 
   // Regex for Pakistani CNIC format: XXXXX-XXXXXXX-X
   const cnicRegex = /^\d{5}-\d{7}-\d{1}$/;
@@ -179,6 +181,7 @@ const ApplyForm = () => {
           status: status,
           payment_status: paymentStatus,
           payment_amount: paymentAmount,
+          user_id: user?.id || null, // Associate with logged-in user
         });
 
       if (insertError) {
