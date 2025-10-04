@@ -23,35 +23,12 @@ export const SessionContextProvider = ({ children }: { children: ReactNode }) =>
 
   useEffect(() => {
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user || null);
-      if (session?.user) {
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-
-        if (error) {
-          console.error(translate("Error fetching user profile:"), error.message);
-        } else if (profile && profile.role === 'admin') {
-          setIsAdmin(true);
-        } else {
-          setIsAdmin(false);
-        }
-      } else {
-        setIsAdmin(false);
-      }
-      setLoading(false);
-    };
-
-    getSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log("Initial session check:", session); // For debugging
         setSession(session);
         setUser(session?.user || null);
+
         if (session?.user) {
           const { data: profile, error } = await supabase
             .from('profiles')
@@ -61,6 +38,7 @@ export const SessionContextProvider = ({ children }: { children: ReactNode }) =>
 
           if (error) {
             console.error(translate("Error fetching user profile:"), error.message);
+            setIsAdmin(false); // Ensure isAdmin is reset on error
           } else if (profile && profile.role === 'admin') {
             setIsAdmin(true);
           } else {
@@ -69,7 +47,51 @@ export const SessionContextProvider = ({ children }: { children: ReactNode }) =>
         } else {
           setIsAdmin(false);
         }
-        setLoading(false);
+      } catch (error) {
+        console.error("Error during initial session fetch or profile check:", error);
+        setSession(null);
+        setUser(null);
+        setIsAdmin(false);
+      } finally {
+        setLoading(false); // Always set loading to false
+      }
+    };
+
+    getSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        console.log("Auth state changed:", _event, session); // For debugging
+        setSession(session);
+        setUser(session?.user || null);
+        setLoading(true); // Set loading true while re-evaluating session/profile
+
+        if (session?.user) {
+          try {
+            const { data: profile, error } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', session.user.id)
+              .single();
+
+            if (error) {
+              console.error(translate("Error fetching user profile on auth state change:"), error.message);
+              setIsAdmin(false);
+            } else if (profile && profile.role === 'admin') {
+              setIsAdmin(true);
+            } else {
+              setIsAdmin(false);
+            }
+          } catch (profileError) {
+            console.error("Error fetching user profile during auth state change:", profileError);
+            setIsAdmin(false);
+          } finally {
+            setLoading(false); // Always set loading to false after auth state change processing
+          }
+        } else {
+          setIsAdmin(false);
+          setLoading(false); // If no user, immediately set loading to false
+        }
       }
     );
 
