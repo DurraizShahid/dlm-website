@@ -26,7 +26,7 @@ const App = () => (
       <LanguageProvider>
         <SessionContextProvider> {/* Wrap with SessionContextProvider */}
           <BrowserRouter>
-            <Navbar />
+            <Navbar /> {/* Moved Navbar inside SessionContextProvider */}
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/about" element={<About />} />
