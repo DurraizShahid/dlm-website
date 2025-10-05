@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -49,29 +49,15 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
     return translations[key]?.[language] || translations[key]?.en || key;
   };
 
-  // Function to handle video viewing
-  const handleViewVideo = async (filePath: string) => {
-    try {
-      const signedUrl = await generateVideoSignedUrl(filePath);
-      if (signedUrl) {
-        window.open(signedUrl, '_blank');
-      } else {
-        toast.error('Error loading video. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error opening video:', error);
-      toast.error('Error opening video.');
+  // Get user's full name from applications data
+  const getUserName = useMemo(() => {
+    if (applications.length > 0) {
+      return applications[0].full_name;
     }
-  };
+    return userEmail; // Fallback to email if no applications
+  }, [applications, userEmail]);
 
-  // Use provided applications or fetch if needed
-  useEffect(() => {
-    if (!propApplications && userEmail) {
-      fetchUserData();
-    }
-  }, [userEmail, propApplications]);
-
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     if (!userEmail) return;
     
     try {
@@ -95,42 +81,65 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
     } finally {
       setLoadingData(false);
     }
-  };
+  }, [userEmail]);
 
-  const getStatusBadge = (status: string) => {
+  // Function to handle video viewing - memoized for performance
+  const handleViewVideo = useCallback(async (filePath: string) => {
+    try {
+      const signedUrl = await generateVideoSignedUrl(filePath);
+      if (signedUrl) {
+        window.open(signedUrl, '_blank');
+      } else {
+        toast.error('Error loading video. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error opening video:', error);
+      toast.error('Error opening video.');
+    }
+  }, []);
+
+  // Use provided applications or fetch if needed
+  useEffect(() => {
+    if (!propApplications && userEmail) {
+      fetchUserData();
+    }
+  }, [userEmail, propApplications, fetchUserData]);
+
+  // Memoize status badge for performance
+  const getStatusBadge = useMemo(() => (status: string) => {
     switch (status) {
       case 'pending':
         return (
-          <Badge variant="outline" className="text-yellow-600 border-yellow-300">
+          <Badge variant="outline" className="text-yellow-600 border-yellow-300 text-xs sm:text-sm">
             <Clock className="w-3 h-3 mr-1" />
             Pending
           </Badge>
         );
       case 'under_review':
         return (
-          <Badge variant="outline" className="text-blue-600 border-blue-300">
+          <Badge variant="outline" className="text-blue-600 border-blue-300 text-xs sm:text-sm">
             <Eye className="w-3 h-3 mr-1" />
             Under Review
           </Badge>
         );
       case 'approved':
         return (
-          <Badge variant="outline" className="text-green-600 border-green-300">
+          <Badge variant="outline" className="text-green-600 border-green-300 text-xs sm:text-sm">
             <CheckCircle className="w-3 h-3 mr-1" />
             Approved
           </Badge>
         );
       case 'rejected':
         return (
-          <Badge variant="outline" className="text-red-600 border-red-300">
+          <Badge variant="outline" className="text-red-600 border-red-300 text-xs sm:text-sm">
             <XCircle className="w-3 h-3 mr-1" />
             Rejected
           </Badge>
         );
       default:
-        return <Badge variant="outline">Unknown</Badge>;
+        return <Badge variant="outline" className="text-xs sm:text-sm">Unknown</Badge>;
     }
-  };
+  }, []);
 
   const getStatusProgress = (status: string) => {
     switch (status) {
@@ -157,24 +166,25 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
-              <div className="bg-blue-600 rounded-full p-2">
-                <User className="h-6 w-6 text-white" />
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-3 sm:py-4 gap-3 sm:gap-0">
+            <div className="flex items-center space-x-3 sm:space-x-4">
+              <div className="bg-blue-600 rounded-full p-2 flex-shrink-0">
+                <User className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">Welcome, {userEmail}</h1>
-                <p className="text-sm text-gray-600">Manage your applications and access learning resources</p>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">Welcome, {getUserName}</h1>
+                <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">Manage your applications and access learning resources</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" size="sm">
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
+            <div className="flex items-center space-x-2 sm:space-x-4 self-end sm:self-auto">
+              <Button variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-3">
+                <Settings className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Settings</span>
               </Button>
-              <Button variant="outline" onClick={() => window.location.href = '/'} size="sm">
-                Back to Home
+              <Button variant="outline" onClick={() => window.location.href = '/'} size="sm" className="text-xs sm:text-sm px-2 sm:px-3">
+                <span className="sm:hidden">Home</span>
+                <span className="hidden sm:inline">Back to Home</span>
               </Button>
             </div>
           </div>
@@ -182,48 +192,50 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs defaultValue="applications" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
-            <TabsTrigger value="applications" className="flex items-center space-x-2">
-              <FileText className="h-4 w-4" />
-              <span>My Applications</span>
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-8">
+        <Tabs defaultValue="applications" className="space-y-4 sm:space-y-6">
+          <TabsList className="grid w-full grid-cols-2 h-auto">
+            <TabsTrigger value="applications" className="flex items-center justify-center space-x-1 sm:space-x-2 py-2 sm:py-3 text-xs sm:text-sm">
+              <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="truncate">My Applications</span>
             </TabsTrigger>
-            <TabsTrigger value="resources" className="flex items-center space-x-2">
-              <BookOpen className="h-4 w-4" />
-              <span>Learning Resources</span>
+            <TabsTrigger value="resources" className="flex items-center justify-center space-x-1 sm:space-x-2 py-2 sm:py-3 text-xs sm:text-sm">
+              <BookOpen className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="truncate">Learning Resources</span>
             </TabsTrigger>
           </TabsList>
 
           {/* Applications Tab */}
-          <TabsContent value="applications" className="space-y-6">
+          <TabsContent value="applications" className="space-y-4 sm:space-y-6">
             {applications.length === 0 ? (
-              <Alert>
+              <Alert className="mx-2 sm:mx-0">
                 <FileText className="h-4 w-4" />
-                <AlertDescription>
-                  You haven't submitted any applications yet. <a href="/apply" className="underline text-blue-600">Submit your first application</a> to get started!
+                <AlertDescription className="text-sm">
+                  You haven't submitted any applications yet. <a href="/apply" className="underline text-blue-600 font-medium">Submit your first application</a> to get started!
                 </AlertDescription>
               </Alert>
             ) : (
-              <div className="grid gap-6">
+              <div className="grid gap-4 sm:gap-6">
                 {applications.map((app) => (
-                  <Card key={app.id} className="overflow-hidden">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="text-lg">{app.idea_title}</CardTitle>
-                          <CardDescription className="mt-1">
+                  <Card key={app.id} className="overflow-hidden mx-2 sm:mx-0">
+                    <CardHeader className="pb-3 px-4 sm:px-6">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-0">
+                        <div className="min-w-0 flex-1">
+                          <CardTitle className="text-base sm:text-lg leading-tight">{app.idea_title}</CardTitle>
+                          <CardDescription className="mt-1 text-xs sm:text-sm">
                             Submitted on {new Date(app.created_at).toLocaleDateString()}
                           </CardDescription>
                         </div>
-                        {getStatusBadge(app.status)}
+                        <div className="self-start">
+                          {getStatusBadge(app.status)}
+                        </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
                       <div>
-                        <h4 className="font-medium text-gray-900 mb-2">Application Progress</h4>
+                        <h4 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">Application Progress</h4>
                         <Progress value={getStatusProgress(app.status)} className="h-2" />
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-gray-500 mt-1 leading-relaxed">
                           {app.status === 'pending' && 'Your application is being reviewed by our team'}
                           {app.status === 'under_review' && 'Your application is currently under detailed review'}
                           {app.status === 'approved' && 'Congratulations! Your application has been approved'}
@@ -232,18 +244,21 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
                       </div>
                       
                       <div>
-                        <h4 className="font-medium text-gray-900 mb-2">Idea Description</h4>
-                        <p className="text-sm text-gray-600 line-clamp-3">{app.idea_description}</p>
+                        <h4 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">Idea Description</h4>
+                        <p className="text-xs sm:text-sm text-gray-600 line-clamp-3 leading-relaxed">{app.idea_description}</p>
                       </div>
 
                       {app.video_url && (
-                        <div className="flex items-center space-x-2">
-                          <Video className="h-4 w-4 text-gray-500" />
-                          <span className="text-sm text-gray-600">Video submission attached</span>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2 pt-2">
+                          <div className="flex items-center space-x-2">
+                            <Video className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                            <span className="text-xs sm:text-sm text-gray-600">Video submission attached</span>
+                          </div>
                           <Button 
                             variant="outline" 
                             size="sm"
                             onClick={() => handleViewVideo(app.video_url!)}
+                            className="w-full sm:w-auto text-xs sm:text-sm"
                           >
                             <PlayCircle className="h-3 w-3 mr-1" />
                             View Video
@@ -258,42 +273,80 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
           </TabsContent>
 
           {/* Resources Tab */}
-          <TabsContent value="resources" className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {/* Dummy booklets for now */}
-              <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Business Planning Guide</CardTitle>
-                  <Badge variant="outline" className="w-fit">Business</Badge>
+          <TabsContent value="resources" className="space-y-4 sm:space-y-6">
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 px-2 sm:px-0">
+              {/* Guidebook #1 */}
+              <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                <CardHeader className="pb-3 px-4 sm:px-6">
+                  <CardTitle className="text-base sm:text-lg">Guidebook #1</CardTitle>
+                  <Badge variant="outline" className="w-fit text-xs">Getting Started</Badge>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-gray-600">A comprehensive guide to creating a successful business plan</p>
-                  <Button variant="default" size="sm" className="flex-1">
-                    <Download className="h-3 w-3 mr-1" />
-                    Download
+                <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
+                  <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">Essential first steps for entrepreneurs and business fundamentals</p>
+                  <Button variant="default" size="sm" className="w-full text-xs sm:text-sm h-9 sm:h-10">
+                    <Download className="h-3 w-3 mr-2" />
+                    Download Guidebook #1
                   </Button>
                 </CardContent>
               </Card>
 
-              <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="text-lg">Marketing Strategies</CardTitle>
-                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                      Premium
-                    </Badge>
-                  </div>
-                  <Badge variant="outline" className="w-fit">Marketing</Badge>
+              {/* Guidebook #2 */}
+              <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                <CardHeader className="pb-3 px-4 sm:px-6">
+                  <CardTitle className="text-base sm:text-lg">Guidebook #2</CardTitle>
+                  <Badge variant="outline" className="w-fit text-xs">Business Planning</Badge>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-gray-600">Effective marketing strategies for small businesses</p>
-                  <Button variant="outline" size="sm" className="flex-1" disabled>
-                    <Download className="h-3 w-3 mr-1" />
-                    Premium Content
+                <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
+                  <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">Comprehensive guide to creating effective business plans and strategies</p>
+                  <Button variant="default" size="sm" className="w-full text-xs sm:text-sm h-9 sm:h-10">
+                    <Download className="h-3 w-3 mr-2" />
+                    Download Guidebook #2
                   </Button>
-                  <p className="text-xs text-gray-500">
-                    This content will be available after your application is approved.
-                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Guidebook #3 */}
+              <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                <CardHeader className="pb-3 px-4 sm:px-6">
+                  <CardTitle className="text-base sm:text-lg">Guidebook #3</CardTitle>
+                  <Badge variant="outline" className="w-fit text-xs">Marketing</Badge>
+                </CardHeader>
+                <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
+                  <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">Marketing strategies and customer acquisition techniques for new businesses</p>
+                  <Button variant="default" size="sm" className="w-full text-xs sm:text-sm h-9 sm:h-10">
+                    <Download className="h-3 w-3 mr-2" />
+                    Download Guidebook #3
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Guidebook #4 */}
+              <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                <CardHeader className="pb-3 px-4 sm:px-6">
+                  <CardTitle className="text-base sm:text-lg">Guidebook #4</CardTitle>
+                  <Badge variant="outline" className="w-fit text-xs">Finance</Badge>
+                </CardHeader>
+                <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
+                  <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">Financial management, funding options, and investment strategies</p>
+                  <Button variant="default" size="sm" className="w-full text-xs sm:text-sm h-9 sm:h-10">
+                    <Download className="h-3 w-3 mr-2" />
+                    Download Guidebook #4
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Guidebook #5 */}
+              <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                <CardHeader className="pb-3 px-4 sm:px-6">
+                  <CardTitle className="text-base sm:text-lg">Guidebook #5</CardTitle>
+                  <Badge variant="outline" className="w-fit text-xs">Growth & Scale</Badge>
+                </CardHeader>
+                <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
+                  <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">Scaling your business, team building, and sustainable growth practices</p>
+                  <Button variant="default" size="sm" className="w-full text-xs sm:text-sm h-9 sm:h-10">
+                    <Download className="h-3 w-3 mr-2" />
+                    Download Guidebook #5
+                  </Button>
                 </CardContent>
               </Card>
             </div>

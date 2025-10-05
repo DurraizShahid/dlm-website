@@ -73,18 +73,18 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4">
-      <div className="max-w-md w-full">
-        <Card className="shadow-2xl border-0">
-          <CardHeader className="text-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
-            <CardTitle className="text-2xl font-bold mb-2">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-4 px-3 sm:py-12 sm:px-4">
+      <div className="w-full max-w-sm sm:max-w-md">
+        <Card className="shadow-lg sm:shadow-2xl border-0 mx-auto">
+          <CardHeader className="text-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg p-4 sm:p-6">
+            <CardTitle className="text-xl sm:text-2xl font-bold mb-2">
               Access Your Dashboard
             </CardTitle>
-            <CardDescription className="text-blue-100">
+            <CardDescription className="text-blue-100 text-sm sm:text-base">
               Enter your email to view your applications
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <form onSubmit={handleEmailSubmit} className="space-y-4">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -96,22 +96,24 @@ const Dashboard = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter the email you used to apply"
-                  className="h-12 border-2 border-gray-200 focus:border-blue-500"
+                  className="h-11 sm:h-12 border-2 border-gray-200 focus:border-blue-500 text-base"
                   required
+                  autoComplete="email"
+                  autoFocus
                 />
               </div>
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+                className="w-full h-11 sm:h-12 text-base sm:text-lg font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white transition-all duration-200"
               >
                 {isLoading ? 'Checking...' : 'Access Dashboard'}
               </Button>
             </form>
-            <div className="mt-6 text-center">
+            <div className="mt-4 sm:mt-6 text-center">
               <p className="text-sm text-gray-600">
                 Don't have an application yet?{' '}
-                <a href="/apply" className="text-blue-600 hover:text-blue-700 underline">
+                <a href="/apply" className="text-blue-600 hover:text-blue-700 underline font-medium">
                   Submit one here
                 </a>
               </p>
