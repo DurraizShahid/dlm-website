@@ -256,7 +256,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
                           {app.status === 'under_review' && 'Your application is currently under detailed review'}
                           {app.status === 'approved' && 'Congratulations! Your application has been approved'}
                           {app.status === 'rejected' && 'Unfortunately, your application was not selected this time'}
-                          {app.status === 'unpaid' && 'Payment required: Please pay 1,500 PKR for duplicate CNIC submission'}
+                          {app.status === 'unpaid' && 'Payment required: Please pay 5,000 PKR for duplicate CNIC submission'}
                           {app.status === 'paid' && 'Payment confirmed: Your application is now being processed'}
                         </p>
                       </div>

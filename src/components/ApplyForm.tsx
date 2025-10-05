@@ -556,8 +556,42 @@ const ApplyForm = () => {
                   Status: {existingCnicData?.status || 'N/A'}
                 </p>
                 <p className="font-medium text-orange-600">
-                  To submit a new application with the same CNIC, you need to pay a fee of <strong>1,500 PKR</strong>.
+                  To submit a new application with the same CNIC, you need to pay a fee of <strong>5,000 PKR</strong>.
                 </p>
+                <div className="border-t border-gray-200 pt-3 mt-3">
+                  <h4 className="font-bold text-gray-800 mb-2">Payment Details:</h4>
+                  <ul className="space-y-1 text-sm">
+                    <li className="flex items-center space-x-2">
+                      <img 
+                        src="/easypaisalogo.png" 
+                        alt="EasyPaisa" 
+                        className="h-6 w-auto"
+                      />
+                      <span><span className="font-medium">Easypaisa:</span> 0333 32101200</span>
+                    </li>
+                    <li className="flex items-center space-x-2">
+                      <img 
+                        src="/jazzcashlogo.png" 
+                        alt="JazzCash" 
+                        className="h-6 w-auto"
+                      />
+                      <span><span className="font-medium">JazzCash:</span> 0333 32101200</span>
+                    </li>
+                    <li className="flex items-center space-x-2">
+                      <img 
+                        src="/bankalfalahlogo.png" 
+                        alt="Bank Alfalah" 
+                        className="h-6 w-auto"
+                      />
+                      <div>
+                        <div><span className="font-medium">Bank:</span> Bank Alfalah Islamic</div>
+                        <div><span className="font-medium">Account Title:</span> Fancy Tech Industries SMC (Pvt) Ltd</div>
+                        <div><span className="font-medium">Account #:</span> 5002491934</div>
+                        <div><span className="font-medium">IBAN:</span> PK42ALFH5639005002491934</div>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
                 <p className="text-xs text-gray-500">
                   Your new application will be marked as "Unpaid" until an admin confirms your payment and updates it to "Paid".
                 </p>
@@ -576,7 +610,7 @@ const ApplyForm = () => {
                 disabled={isSubmitting}
                 className="w-full sm:w-auto bg-yellow-500 hover:bg-yellow-600 text-gray-900"
               >
-                {isSubmitting ? 'Submitting...' : 'Pay 1,500 PKR & Submit'}
+                {isSubmitting ? 'Submitting...' : 'Pay 5,000 PKR & Submit'}
               </Button>
             </DialogFooter>
           </DialogContent>
