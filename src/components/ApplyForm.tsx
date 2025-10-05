@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
@@ -93,24 +93,30 @@ const ApplyForm = () => {
 
   const checkExistingCnic = async (cnic: string) => {
     try {
+      console.log('Checking for existing CNIC:', cnic);
       const { data, error } = await (supabase as any)
         .from('application_submissions')
         .select('*')
-        .eq('cnic', cnic)
-        .single();
+        .eq('cnic', cnic);
 
+      console.log('Supabase response for CNIC check:', { data, error });
+      
       if (error) {
-        // No existing CNIC found (404 error is expected)
-        if (error.code === 'PGRST116') {
-          return null;
-        }
         console.error('Error checking CNIC:', error);
+        // Still return null even if there's an error
         return null;
       }
 
-      return data;
+      // Check if any records were returned (array with items)
+      if (Array.isArray(data) && data.length > 0) {
+        console.log('Existing CNIC found:', data[0]);
+        return data[0]; // Return the first match
+      }
+
+      console.log('No existing CNIC found - data:', data);
+      return null;
     } catch (error) {
-      console.error('Error checking CNIC:', error);
+      console.error('Exception while checking CNIC:', error);
       return null;
     }
   };
@@ -193,6 +199,8 @@ const ApplyForm = () => {
   };
 
   const onSubmit = async (data: ApplyFormData) => {
+    console.log('Form submitted with data:', data);
+    
     // Re-validate entire form before submission
     const validationResult = applyFormSchema.safeParse(data);
     if (!validationResult.success) {
@@ -202,29 +210,70 @@ const ApplyForm = () => {
     }
 
     // Check if CNIC already exists
+    console.log('Checking for existing CNIC:', data.cnic);
     const existingEntry = await checkExistingCnic(data.cnic);
+    console.log('Existing entry result:', existingEntry);
     
-    if (existingEntry) {
+    // More robust check for existing entry
+    const hasExistingEntry = existingEntry && 
+                             typeof existingEntry === 'object' && 
+                             Object.keys(existingEntry).length > 0;
+    
+    console.log('Has existing entry:', hasExistingEntry);
+    console.log('Existing entry details:', existingEntry);
+    
+    if (hasExistingEntry) {
       // CNIC exists, show payment modal
+      console.log('Showing payment modal for existing CNIC');
       setExistingCnicData(existingEntry);
       setPendingFormData(data);
       setShowPaymentModal(true);
+      console.log('Payment modal state set to:', true);
+      
+      // Additional debugging to ensure modal appears
+      setTimeout(() => {
+        console.log('Modal visibility check - showPaymentModal:', showPaymentModal);
+        if (!showPaymentModal) {
+          console.log('Forcing modal to show');
+          setShowPaymentModal(true);
+        }
+      }, 0);
     } else {
       // CNIC doesn't exist, proceed with normal submission
+      console.log('No existing CNIC found, proceeding with normal submission');
       await submitApplication(data, false);
     }
   };
 
   const handlePaymentConfirm = async () => {
+    console.log('Payment confirmed for existing CNIC application');
     if (pendingFormData) {
       await submitApplication(pendingFormData, true);
     }
   };
 
   const handlePaymentCancel = () => {
+    console.log('Payment cancelled');
     setShowPaymentModal(false);
     setPendingFormData(null);
     setExistingCnicData(null);
+  };
+
+  // Debugging: Log when showPaymentModal changes
+  useEffect(() => {
+    console.log('showPaymentModal state changed to:', showPaymentModal);
+  }, [showPaymentModal]);
+  
+  // Test function to manually trigger the modal
+  const testShowModal = () => {
+    console.log('Test show modal function called');
+    setExistingCnicData({
+      cnic: '12345-1234567-1',
+      full_name: 'Test User',
+      idea_title: 'Test Idea',
+      status: 'pending'
+    });
+    setShowPaymentModal(true);
   };
 
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -486,7 +535,10 @@ const ApplyForm = () => {
         </Card>
 
         {/* Payment Modal */}
-        <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
+        <Dialog open={showPaymentModal} onOpenChange={(open) => {
+          console.log('Dialog onOpenChange called with:', open);
+          setShowPaymentModal(open);
+        }}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center space-x-2">
@@ -495,13 +547,13 @@ const ApplyForm = () => {
               </DialogTitle>
               <DialogDescription className="text-sm text-gray-600 space-y-3">
                 <p>
-                  We found an existing application with CNIC: <strong>{existingCnicData?.cnic}</strong>
+                  We found an existing application with CNIC: <strong>{existingCnicData?.cnic || 'N/A'}</strong>
                 </p>
                 <p>
                   <strong>Previous Application:</strong><br />
-                  Name: {existingCnicData?.full_name}<br />
-                  Idea: {existingCnicData?.idea_title}<br />
-                  Status: {existingCnicData?.status}
+                  Name: {existingCnicData?.full_name || 'N/A'}<br />
+                  Idea: {existingCnicData?.idea_title || 'N/A'}<br />
+                  Status: {existingCnicData?.status || 'N/A'}
                 </p>
                 <p className="font-medium text-orange-600">
                   To submit a new application with the same CNIC, you need to pay a fee of <strong>1,500 PKR</strong>.
