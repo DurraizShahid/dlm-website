@@ -11,7 +11,7 @@ CREATE TABLE application_submissions (
   idea_title TEXT NOT NULL,
   idea_description TEXT NOT NULL CHECK (length(idea_description) >= 300 AND length(idea_description) <= 500),
   video_url TEXT, -- Stores file path (e.g., 'videos/filename.mp4'), not full URL
-  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'under_review', 'approved', 'rejected')),
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'under_review', 'approved', 'rejected', 'unpaid', 'paid')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
@@ -41,11 +41,19 @@ CREATE POLICY "Anyone can submit applications" ON application_submissions
 CREATE POLICY "Anyone can view their own applications by email" ON application_submissions
   FOR SELECT USING (true); -- Simplified for now
 
+CREATE POLICY "Anyone can update application status" ON application_submissions
+  FOR UPDATE USING (true) WITH CHECK (true);
+
 CREATE POLICY "Anyone can create user records" ON users
   FOR INSERT WITH CHECK (true);
 
 CREATE POLICY "Anyone can view user records" ON users
   FOR SELECT USING (true); -- Simplified for now
+
+-- Migration: Update existing database constraint to include new status values
+-- Run this if you have an existing database:
+-- ALTER TABLE application_submissions DROP CONSTRAINT application_submissions_status_check;
+-- ALTER TABLE application_submissions ADD CONSTRAINT application_submissions_status_check CHECK (status IN ('pending', 'under_review', 'approved', 'rejected', 'unpaid', 'paid'));
 
 -- Create storage bucket for video files
 INSERT INTO storage.buckets (id, name, public) VALUES ('application-videos', 'application-videos', false);

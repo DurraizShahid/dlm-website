@@ -30,7 +30,7 @@ interface Application {
   email: string;
   idea_title: string;
   idea_description: string;
-  status: 'pending' | 'under_review' | 'approved' | 'rejected';
+  status: 'pending' | 'under_review' | 'approved' | 'rejected' | 'unpaid' | 'paid';
   created_at: string;
   video_url?: string; // This is now a file path, not a full URL
 }
@@ -136,6 +136,20 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
             Rejected
           </Badge>
         );
+      case 'unpaid':
+        return (
+          <Badge variant="outline" className="text-orange-600 border-orange-300 text-xs sm:text-sm">
+            <Clock className="w-3 h-3 mr-1" />
+            Unpaid
+          </Badge>
+        );
+      case 'paid':
+        return (
+          <Badge variant="outline" className="text-purple-600 border-purple-300 text-xs sm:text-sm">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Paid
+          </Badge>
+        );
       default:
         return <Badge variant="outline" className="text-xs sm:text-sm">Unknown</Badge>;
     }
@@ -147,6 +161,8 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
       case 'under_review': return 50;
       case 'approved': return 100;
       case 'rejected': return 0;
+      case 'unpaid': return 15;
+      case 'paid': return 35;
       default: return 0;
     }
   };
@@ -169,8 +185,8 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-3 sm:py-4 gap-3 sm:gap-0">
             <div className="flex items-center space-x-3 sm:space-x-4">
-              <div className="bg-blue-600 rounded-full p-2 flex-shrink-0">
-                <User className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+              <div className="bg-yellow-500 rounded-full p-2 flex-shrink-0">
+                <User className="h-5 w-5 sm:h-6 sm:w-6 text-gray-900" />
               </div>
               <div className="min-w-0 flex-1">
                 <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">Welcome, {getUserName}</h1>
@@ -240,6 +256,8 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
                           {app.status === 'under_review' && 'Your application is currently under detailed review'}
                           {app.status === 'approved' && 'Congratulations! Your application has been approved'}
                           {app.status === 'rejected' && 'Unfortunately, your application was not selected this time'}
+                          {app.status === 'unpaid' && 'Payment required: Please pay 1,500 PKR for duplicate CNIC submission'}
+                          {app.status === 'paid' && 'Payment confirmed: Your application is now being processed'}
                         </p>
                       </div>
                       

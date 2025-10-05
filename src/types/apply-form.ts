@@ -12,7 +12,7 @@ export interface ApplicationSubmission {
   idea_description: string;
   video_url?: string;
   user_id?: string;
-  status?: 'pending' | 'under_review' | 'approved' | 'rejected';
+  status?: 'pending' | 'under_review' | 'approved' | 'rejected' | 'unpaid' | 'paid';
   created_at?: string;
   updated_at?: string;
 }

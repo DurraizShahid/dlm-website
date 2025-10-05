@@ -46,7 +46,7 @@ const SuccessStoriesSection = () => {
         </div>
         <div className="pt-8">
           <Link to="/apply">
-            <Button className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 sm:py-4 sm:px-10 rounded-full text-lg sm:text-xl shadow-lg transform transition-all duration-300 ease-in-out hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-75">
+            <Button className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 px-8 sm:py-4 sm:px-10 rounded-full text-lg sm:text-xl shadow-lg transform transition-all duration-300 ease-in-out hover:scale-105 focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:ring-opacity-75">
               <Sparkles className="mr-2 h-5 w-5" /> {translate("Your Story Could Be Next – Apply Now")}
             </Button>
           </Link>

@@ -38,7 +38,7 @@ interface Application {
   idea_title: string;
   idea_description: string;
   video_url?: string;
-  status: 'pending' | 'under_review' | 'approved' | 'rejected';
+  status: 'pending' | 'under_review' | 'approved' | 'rejected' | 'unpaid' | 'paid';
   created_at: string;
 }
 
@@ -123,17 +123,28 @@ const Admin = () => {
   };
 
   const updateApplicationStatus = async (id: string, newStatus: string) => {
+    console.log(`Attempting to update application ${id} to status: ${newStatus}`);
+    
     try {
-      const { error } = await (supabase as any)
+      const { data, error } = await (supabase as any)
         .from('application_submissions')
         .update({ status: newStatus, updated_at: new Date().toISOString() })
-        .eq('id', id);
+        .eq('id', id)
+        .select(); // Add select to get the updated data
 
       if (error) {
         console.error('Error updating status:', error);
-        toast.error('Error updating application status');
+        console.error('Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        toast.error(`Error updating application status: ${error.message}`);
         return;
       }
+
+      console.log('Update successful, response data:', data);
 
       // Update local state
       setApplications(apps => 
@@ -144,8 +155,8 @@ const Admin = () => {
 
       toast.success(`Application status updated to ${newStatus}`);
     } catch (error) {
-      console.error('Error updating status:', error);
-      toast.error('Error updating application status');
+      console.error('Unexpected error updating status:', error);
+      toast.error(`Error updating application status: ${error}`);
     }
   };
 
@@ -199,6 +210,20 @@ const Admin = () => {
           <Badge variant="outline" className="text-red-600 border-red-300">
             <XCircle className="w-3 h-3 mr-1" />
             Rejected
+          </Badge>
+        );
+      case 'unpaid':
+        return (
+          <Badge variant="outline" className="text-orange-600 border-orange-300">
+            <Clock className="w-3 h-3 mr-1" />
+            Unpaid
+          </Badge>
+        );
+      case 'paid':
+        return (
+          <Badge variant="outline" className="text-purple-600 border-purple-300">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Paid
           </Badge>
         );
       default:
@@ -288,7 +313,7 @@ const Admin = () => {
 
               <Button 
                 type="submit" 
-                className="w-full h-12 bg-gray-800 hover:bg-gray-900"
+                className="w-full h-12 bg-yellow-500 hover:bg-yellow-600 text-gray-900"
               >
                 Sign In
               </Button>
@@ -467,7 +492,10 @@ const Admin = () => {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => updateApplicationStatus(app.id, 'approved')}
+                              onClick={() => {
+                                console.log('Approve button clicked for app:', app.id);
+                                updateApplicationStatus(app.id, 'approved');
+                              }}
                               disabled={app.status === 'approved'}
                               className="text-green-600 hover:text-green-700"
                             >
@@ -476,12 +504,28 @@ const Admin = () => {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => updateApplicationStatus(app.id, 'rejected')}
+                              onClick={() => {
+                                console.log('Reject button clicked for app:', app.id);
+                                updateApplicationStatus(app.id, 'rejected');
+                              }}
                               disabled={app.status === 'rejected'}
                               className="text-red-600 hover:text-red-700"
                             >
                               Reject
                             </Button>
+                            {app.status === 'unpaid' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  console.log('Mark as Paid button clicked for app:', app.id);
+                                  updateApplicationStatus(app.id, 'paid');
+                                }}
+                                className="text-purple-600 hover:text-purple-700"
+                              >
+                                Mark as Paid
+                              </Button>
+                            )}
                             <Button
                               variant="outline"
                               size="sm"

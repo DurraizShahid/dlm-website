@@ -140,7 +140,7 @@ const LoginForm = () => {
                     <Button
                       type="submit"
                       disabled={isLoading}
-                      className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+                      className="w-full h-12 text-lg font-semibold bg-yellow-500 hover:bg-yellow-600 text-gray-900"
                     >
                       {isLoading ? 'Sending...' : 'Send Magic Link'}
                     </Button>
@@ -196,7 +196,7 @@ const LoginForm = () => {
                     <Button
                       type="submit"
                       disabled={isLoading}
-                      className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+                      className="w-full h-12 text-lg font-semibold bg-yellow-500 hover:bg-yellow-600 text-gray-900"
                     >
                       {isLoading ? 'Signing In...' : 'Sign In'}
                     </Button>

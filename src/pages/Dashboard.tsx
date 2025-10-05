@@ -76,11 +76,11 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-4 px-3 sm:py-12 sm:px-4">
       <div className="w-full max-w-sm sm:max-w-md">
         <Card className="shadow-lg sm:shadow-2xl border-0 mx-auto">
-          <CardHeader className="text-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg p-4 sm:p-6">
+          <CardHeader className="text-center bg-gradient-to-r from-green-800 via-emerald-600 to-yellow-500 text-white rounded-t-lg p-4 sm:p-6">
             <CardTitle className="text-xl sm:text-2xl font-bold mb-2">
               Access Your Dashboard
             </CardTitle>
-            <CardDescription className="text-blue-100 text-sm sm:text-base">
+            <CardDescription className="text-green-100 text-sm sm:text-base">
               Enter your email to view your applications
             </CardDescription>
           </CardHeader>
@@ -105,7 +105,7 @@ const Dashboard = () => {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-11 sm:h-12 text-base sm:text-lg font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white transition-all duration-200"
+                className="w-full h-11 sm:h-12 text-base sm:text-lg font-semibold bg-yellow-500 hover:bg-yellow-600 text-gray-900 transition-all duration-200"
               >
                 {isLoading ? 'Checking...' : 'Access Dashboard'}
               </Button>

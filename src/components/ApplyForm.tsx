@@ -6,6 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   Form,
   FormControl,
   FormDescription,
@@ -19,7 +27,7 @@ import { applyFormSchema, ApplyFormData } from '@/types/apply-form';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { translations } from '@/i18n/translations';
 import { toast } from 'sonner';
-import { Upload, X, CheckCircle } from 'lucide-react';
+import { Upload, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const ApplyForm = () => {
@@ -28,6 +36,9 @@ const ApplyForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [existingCnicData, setExistingCnicData] = useState<any>(null);
+  const [pendingFormData, setPendingFormData] = useState<ApplyFormData | null>(null);
 
   const translate = (key: keyof typeof translations) => {
     return translations[key]?.[language] || translations[key]?.en || key;
@@ -80,21 +91,37 @@ const ApplyForm = () => {
     }
   };
 
-  const onSubmit = async (data: ApplyFormData) => {
+  const checkExistingCnic = async (cnic: string) => {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('application_submissions')
+        .select('*')
+        .eq('cnic', cnic)
+        .single();
+
+      if (error) {
+        // No existing CNIC found (404 error is expected)
+        if (error.code === 'PGRST116') {
+          return null;
+        }
+        console.error('Error checking CNIC:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error checking CNIC:', error);
+      return null;
+    }
+  };
+
+  const submitApplication = async (data: ApplyFormData, isPaidApplication = false) => {
     console.log('Form submission started with data:', { email: data.email, ideaTitle: data.ideaTitle });
     
     try {
       setIsSubmitting(true);
       toast.info(translate('Submitting...'));
 
-      // Re-validate entire form before submission (project specification)
-      const validationResult = applyFormSchema.safeParse(data);
-      if (!validationResult.success) {
-        console.log('Form validation failed:', validationResult.error);
-        toast.error('Please fix all form errors before submitting.');
-        return;
-      }
-      
       console.log('Form validation passed, uploading video...');
 
       // Upload video first
@@ -107,7 +134,10 @@ const ApplyForm = () => {
       console.log('Video uploaded successfully, file path:', videoUrl);
       console.log('Submitting application to database...');
 
-      // Submit application to database - simple approach without auth
+      // Determine status based on whether this is a paid application
+      const status = isPaidApplication ? 'unpaid' : 'pending';
+
+      // Submit application to database
       const { error: submissionError } = await (supabase as any)
         .from('application_submissions')
         .insert({
@@ -119,12 +149,11 @@ const ApplyForm = () => {
           idea_title: data.ideaTitle,
           idea_description: data.ideaDescription,
           video_url: videoUrl,
-          status: 'pending',
+          status: status,
         });
 
       if (submissionError) {
         console.error('Submission error:', submissionError);
-        // Following project specification for error message format
         if (submissionError.message?.includes('JWT') || submissionError.message?.includes('anon')) {
           toast.error(`${translate('Error submitting application. Please try again.')}: Database not configured`);
         } else {
@@ -136,11 +165,18 @@ const ApplyForm = () => {
       console.log('Application submitted successfully to database');
 
       // Success!
-      toast.success(translate('Application submitted successfully!'));
+      if (isPaidApplication) {
+        toast.success('Application submitted! Status: Unpaid. Please wait for admin approval after payment.');
+      } else {
+        toast.success(translate('Application submitted successfully!'));
+      }
       
       console.log('Resetting form and redirecting...');
       form.reset();
       setUploadedVideoUrl(null);
+      setShowPaymentModal(false);
+      setPendingFormData(null);
+      setExistingCnicData(null);
       
       // Redirect to home page
       setTimeout(() => {
@@ -154,6 +190,41 @@ const ApplyForm = () => {
       console.log('Setting isSubmitting to false');
       setIsSubmitting(false);
     }
+  };
+
+  const onSubmit = async (data: ApplyFormData) => {
+    // Re-validate entire form before submission
+    const validationResult = applyFormSchema.safeParse(data);
+    if (!validationResult.success) {
+      console.log('Form validation failed:', validationResult.error);
+      toast.error('Please fix all form errors before submitting.');
+      return;
+    }
+
+    // Check if CNIC already exists
+    const existingEntry = await checkExistingCnic(data.cnic);
+    
+    if (existingEntry) {
+      // CNIC exists, show payment modal
+      setExistingCnicData(existingEntry);
+      setPendingFormData(data);
+      setShowPaymentModal(true);
+    } else {
+      // CNIC doesn't exist, proceed with normal submission
+      await submitApplication(data, false);
+    }
+  };
+
+  const handlePaymentConfirm = async () => {
+    if (pendingFormData) {
+      await submitApplication(pendingFormData, true);
+    }
+  };
+
+  const handlePaymentCancel = () => {
+    setShowPaymentModal(false);
+    setPendingFormData(null);
+    setExistingCnicData(null);
   };
 
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -173,11 +244,11 @@ const ApplyForm = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
       <div className="max-w-4xl mx-auto">
         <Card className="shadow-2xl border-0">
-          <CardHeader className="text-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
+          <CardHeader className="text-center bg-gradient-to-r from-green-800 via-emerald-600 to-yellow-500 text-white rounded-t-lg">
             <CardTitle className="text-3xl font-bold mb-2">
               {translate('Submit Your Idea')}
             </CardTitle>
-            <CardDescription className="text-blue-100 text-lg">
+            <CardDescription className="text-green-100 text-lg">
               {translate('Fill out the form below to apply for a chance to win 10 Lakh Rupees and bring your dream to life.')}
             </CardDescription>
           </CardHeader>
@@ -404,7 +475,7 @@ const ApplyForm = () => {
                   <Button
                     type="submit"
                     disabled={isSubmitting || isUploading}
-                    className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
+                    className="w-full h-14 text-lg font-semibold bg-yellow-500 hover:bg-yellow-600 text-gray-900 shadow-lg"
                   >
                     {isSubmitting ? translate('Submitting...') : translate('Submit Application')}
                   </Button>
@@ -413,6 +484,51 @@ const ApplyForm = () => {
             </Form>
           </CardContent>
         </Card>
+
+        {/* Payment Modal */}
+        <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center space-x-2">
+                <AlertCircle className="h-5 w-5 text-orange-500" />
+                <span>CNIC Already Registered</span>
+              </DialogTitle>
+              <DialogDescription className="text-sm text-gray-600 space-y-3">
+                <p>
+                  We found an existing application with CNIC: <strong>{existingCnicData?.cnic}</strong>
+                </p>
+                <p>
+                  <strong>Previous Application:</strong><br />
+                  Name: {existingCnicData?.full_name}<br />
+                  Idea: {existingCnicData?.idea_title}<br />
+                  Status: {existingCnicData?.status}
+                </p>
+                <p className="font-medium text-orange-600">
+                  To submit a new application with the same CNIC, you need to pay a fee of <strong>1,500 PKR</strong>.
+                </p>
+                <p className="text-xs text-gray-500">
+                  Your new application will be marked as "Unpaid" until an admin confirms your payment and updates it to "Paid".
+                </p>
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+              <Button
+                variant="outline"
+                onClick={handlePaymentCancel}
+                className="w-full sm:w-auto"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handlePaymentConfirm}
+                disabled={isSubmitting}
+                className="w-full sm:w-auto bg-yellow-500 hover:bg-yellow-600 text-gray-900"
+              >
+                {isSubmitting ? 'Submitting...' : 'Pay 1,500 PKR & Submit'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
