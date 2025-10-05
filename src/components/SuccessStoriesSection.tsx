@@ -13,17 +13,17 @@ const SuccessStoriesSection = () => {
     {
       name: "Ali, 22",
       description: "Built his first business with DLM support.",
-      image: "https://via.placeholder.com/150/FFD700/000000?text=Ali", // Placeholder image
+      image: "https://placehold.co/400", // Placeholder image
     },
     {
       name: "Sana, 19",
       description: "Turned a university project into a funded startup.",
-      image: "https://via.placeholder.com/150/FFD700/000000?text=Sana", // Placeholder image
+      image: "https://placehold.co/400", // Placeholder image
     },
     {
       name: "Ahmed, 25",
       description: "Launched a tech solution for local farmers.",
-      image: "https://via.placeholder.com/150/FFD700/000000?text=Ahmed", // Placeholder image
+      image: "https://placehold.co/400", // Placeholder image
     },
   ];
 
