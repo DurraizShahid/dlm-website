@@ -539,78 +539,159 @@ const ApplyForm = () => {
           console.log('Dialog onOpenChange called with:', open);
           setShowPaymentModal(open);
         }}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle className="flex items-center space-x-2">
-                <AlertCircle className="h-5 w-5 text-orange-500" />
+          <DialogContent className="sm:max-w-md max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="text-left sticky top-0 bg-white z-10 pb-4 border-b">
+              <DialogTitle className="flex items-center space-x-2 text-xl">
+                <AlertCircle className="h-6 w-6 text-amber-500" />
                 <span>CNIC Already Registered</span>
               </DialogTitle>
-              <DialogDescription className="text-sm text-gray-600 space-y-3">
-                <p>
-                  We found an existing application with CNIC: <strong>{existingCnicData?.cnic || 'N/A'}</strong>
-                </p>
-                <p>
-                  <strong>Previous Application:</strong><br />
-                  Name: {existingCnicData?.full_name || 'N/A'}<br />
-                  Idea: {existingCnicData?.idea_title || 'N/A'}<br />
-                  Status: {existingCnicData?.status || 'N/A'}
-                </p>
-                <p className="font-medium text-orange-600">
-                  To submit a new application with the same CNIC, you need to pay a fee of <strong>5,000 PKR</strong>.
-                </p>
-                <div className="border-t border-gray-200 pt-3 mt-3">
-                  <h4 className="font-bold text-gray-800 mb-2">Payment Details:</h4>
-                  <ul className="space-y-1 text-sm">
-                    <li className="flex items-center space-x-2">
-                      <img 
-                        src="/easypaisalogo.png" 
-                        alt="EasyPaisa" 
-                        className="h-6 w-auto"
-                      />
-                      <span><span className="font-medium">Easypaisa:</span> 0333 32101200</span>
-                    </li>
-                    <li className="flex items-center space-x-2">
-                      <img 
-                        src="/jazzcashlogo.png" 
-                        alt="JazzCash" 
-                        className="h-6 w-auto"
-                      />
-                      <span><span className="font-medium">JazzCash:</span> 0333 32101200</span>
-                    </li>
-                    <li className="flex items-center space-x-2">
-                      <img 
-                        src="/bankalfalahlogo.png" 
-                        alt="Bank Alfalah" 
-                        className="h-6 w-auto"
-                      />
-                      <div>
-                        <div><span className="font-medium">Bank:</span> Bank Alfalah Islamic</div>
-                        <div><span className="font-medium">Account Title:</span> Fancy Tech Industries SMC (Pvt) Ltd</div>
-                        <div><span className="font-medium">Account #:</span> 5002491934</div>
-                        <div><span className="font-medium">IBAN:</span> PK42ALFH5639005002491934</div>
+            </DialogHeader>
+            <div className="py-4">
+              <DialogDescription className="text-sm text-gray-600 space-y-4">
+                <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <AlertCircle className="h-5 w-5 text-amber-500" />
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-amber-700">
+                        We found an existing application with CNIC: <strong>{existingCnicData?.cnic || 'N/A'}</strong>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r">
+                  <h3 className="font-bold text-blue-800 mb-2">Previous Application Details</h3>
+                  <div className="grid grid-cols-1 gap-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-700">Name:</span>
+                      <span className="text-gray-900">{existingCnicData?.full_name || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-700">Idea:</span>
+                      <span className="text-gray-900">{existingCnicData?.idea_title || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-700">Status:</span>
+                      <span className="text-gray-900 capitalize">{existingCnicData?.status || 'N/A'}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <AlertCircle className="h-5 w-5 text-red-500" />
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-red-700">
+                        To submit a new application with the same CNIC, you need to pay a fee of <strong className="text-lg">5,000 PKR</strong>.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <h4 className="font-bold text-gray-800 text-lg border-b pb-2">Payment Methods</h4>
+                  <div className="grid grid-cols-1 gap-4">
+                    {/* EasyPaisa */}
+                    <div className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
+                      <div className="flex items-center space-x-3 mb-3">
+                        <img 
+                          src="/easypaisalogo.png" 
+                          alt="EasyPaisa" 
+                          className="h-8 w-auto"
+                        />
+                        <span className="font-bold text-gray-800">EasyPaisa</span>
                       </div>
-                    </li>
+                      <div className="ml-11">
+                        <p className="text-sm text-gray-600 mb-1">Mobile Account</p>
+                        <p className="font-mono bg-gray-100 p-2 rounded text-center">0333 32101200</p>
+                      </div>
+                    </div>
+                    
+                    {/* JazzCash */}
+                    <div className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
+                      <div className="flex items-center space-x-3 mb-3">
+                        <img 
+                          src="/jazzcashlogo.png" 
+                          alt="JazzCash" 
+                          className="h-8 w-auto"
+                        />
+                        <span className="font-bold text-gray-800">JazzCash</span>
+                      </div>
+                      <div className="ml-11">
+                        <p className="text-sm text-gray-600 mb-1">Mobile Account</p>
+                        <p className="font-mono bg-gray-100 p-2 rounded text-center">0333 32101200</p>
+                      </div>
+                    </div>
+                    
+                    {/* Bank Transfer */}
+                    <div className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
+                      <div className="flex items-center space-x-3 mb-3">
+                        <img 
+                          src="/bankalfalahlogo.png" 
+                          alt="Bank Alfalah" 
+                          className="h-8 w-auto"
+                        />
+                        <span className="font-bold text-gray-800">Bank Transfer</span>
+                      </div>
+                      <div className="ml-11 space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="font-medium text-gray-700">Bank:</span>
+                          <span className="text-gray-900">Bank Alfalah Islamic</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="font-medium text-gray-700">Account Title:</span>
+                          <span className="text-gray-900">Fancy Tech Industries SMC (Pvt) Ltd</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="font-medium text-gray-700">Account #:</span>
+                          <span className="font-mono text-gray-900">5002491934</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="font-medium text-gray-700">IBAN:</span>
+                          <span className="font-mono text-gray-900">PK42ALFH5639005002491934</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <h4 className="font-bold text-gray-800 mb-2">Important Information</h4>
+                  <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
+                    <li>Your new application will be marked as "Unpaid" until an admin confirms your payment</li>
+                    <li>Please keep a screenshot of your payment receipt for reference</li>
+                    <li>Payment confirmation may take up to 24 hours</li>
+                    <li>For payment issues, contact support with your CNIC number</li>
                   </ul>
                 </div>
-                <p className="text-xs text-gray-500">
-                  Your new application will be marked as "Unpaid" until an admin confirms your payment and updates it to "Paid".
-                </p>
               </DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="flex-col sm:flex-row gap-2">
+            </div>
+            <DialogFooter className="flex-col sm:flex-row gap-3 pt-2 sticky bottom-0 bg-white z-10 pt-4 border-t">
               <Button
                 variant="outline"
                 onClick={handlePaymentCancel}
-                className="w-full sm:w-auto"
+                className="w-full sm:w-1/2 py-6 text-base"
               >
-                Cancel
+                Cancel Application
               </Button>
               <Button
                 onClick={handlePaymentConfirm}
                 disabled={isSubmitting}
-                className="w-full sm:w-auto bg-yellow-500 hover:bg-yellow-600 text-gray-900"
+                className="w-full sm:w-1/2 py-6 text-base bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg"
               >
-                {isSubmitting ? 'Submitting...' : 'Pay 5,000 PKR & Submit'}
+                {isSubmitting ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Processing...
+                  </span>
+                ) : 'Pay 5,000 PKR & Submit'}
               </Button>
             </DialogFooter>
           </DialogContent>
