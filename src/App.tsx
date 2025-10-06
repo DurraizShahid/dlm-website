@@ -10,6 +10,8 @@ import FAQ from "./pages/FAQ";
 import Apply from "./pages/Apply";
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
+import TermsOfService from "./pages/TermsOfService";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
 import Navbar from "./components/Navbar";
 import { LanguageProvider } from "./i18n/LanguageContext";
@@ -28,6 +30,8 @@ const AppContent = () => {
         <Route path="/apply" element={<Apply />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>

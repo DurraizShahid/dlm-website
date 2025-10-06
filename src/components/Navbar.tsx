@@ -48,6 +48,20 @@ const Navbar = () => {
             </Link>
           ))}
           
+          {/* Additional Links */}
+          <Link
+            to="/terms"
+            className="text-sm font-medium text-gray-700 transition-colors hover:text-green-700 dark:text-gray-300 dark:hover:text-green-400"
+          >
+            {translate("Terms")}
+          </Link>
+          <Link
+            to="/privacy"
+            className="text-sm font-medium text-gray-700 transition-colors hover:text-green-700 dark:text-gray-300 dark:hover:text-green-400"
+          >
+            {translate("Privacy")}
+          </Link>
+          
           {/* Language Selector */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -103,6 +117,18 @@ const Navbar = () => {
                     {link.name}
                   </Link>
                 ))}
+                <Link
+                  to="/terms"
+                  className="text-lg font-medium text-gray-700 hover:text-green-700 dark:text-gray-300 dark:hover:text-green-400"
+                >
+                  {translate("Terms of Service")}
+                </Link>
+                <Link
+                  to="/privacy"
+                  className="text-lg font-medium text-gray-700 hover:text-green-700 dark:text-gray-300 dark:hover:text-green-400"
+                >
+                  {translate("Privacy Policy")}
+                </Link>
               </nav>
             </SheetContent>
           </Sheet>
