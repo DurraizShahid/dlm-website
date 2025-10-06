@@ -32,8 +32,12 @@ const Navbar = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-gray-900/95 dark:supports-[backdrop-filter]:bg-gray-900/60">
       <div className="container flex h-14 items-center justify-between">
-        <Link to="/" className="flex items-center font-bold text-xl text-green-700 dark:text-green-400">
-          DLM
+        <Link to="/" className="flex items-center">
+          <img 
+            src="/logo.png" 
+            alt="DLM Logo" 
+            className="h-10 w-auto"
+          />
         </Link>
 
         {/* Desktop Navigation */}

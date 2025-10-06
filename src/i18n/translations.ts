@@ -152,6 +152,7 @@ export const translations = {
   "Last Updated: October 7, 2025": { en: "Last Updated: October 7, 2025", ur: "آخری تازہ کاری: 7 اکتوبر 2025" },
   "1. Information We Collect": { en: "1. Information We Collect", ur: "1. معلومات جو ہم جمع کرتے ہیں" },
   "We collect information you provide directly to us when using our services, including:": { en: "We collect information you provide directly to us when using our services, including:", ur: "ہم آپ کی معلومات جمع کرتے ہیں جو آپ ہماری خدمات کا استعمال کرتے وقت ہمیں براہ راست فراہم کرتے ہیں، بشمول:" },
+  "Personal information such as your name, age, city, CNIC, email, and phone number": { en: "Personal information such as your name, age, city, CNIC, email, and phone number", ur: "ذاتی معلومات جیسے آپ کا نام، عمر، شہر، شناختی کارڈ نمبر، ای میل، اور فون نمبر" },
   "Your idea submission, including title, description, and video": { en: "Your idea submission, including title, description, and video", ur: "آپ کا خیال جمع کروانا، بشمول عنوان، تفصیل، اور ویڈیو" },
   "Any additional information you choose to provide through our platform": { en: "Any additional information you choose to provide through our platform", ur: "کوئی اضافی معلومات جو آپ ہمارے پلیٹ فارم کے ذریعے فراہم کرنا چنتے ہیں" },
   "2. How We Use Your Information": { en: "2. How We Use Your Information", ur: "2. ہم آپ کی معلومات کا استعمال کیسے کرتے ہیں" },

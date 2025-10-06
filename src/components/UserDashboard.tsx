@@ -185,9 +185,12 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-3 sm:py-4 gap-3 sm:gap-0">
             <div className="flex items-center space-x-3 sm:space-x-4">
-              <div className="bg-yellow-500 rounded-full p-2 flex-shrink-0">
-                <User className="h-5 w-5 sm:h-6 sm:w-6 text-gray-900" />
-              </div>
+              {/* Logo added here */}
+              <img 
+                src="/logo.png" 
+                alt="DLM Logo" 
+                className="h-8 w-auto"
+              />
               <div className="min-w-0 flex-1">
                 <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">Welcome, {getUserName}</h1>
                 <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">Manage your applications and access learning resources</p>

@@ -332,9 +332,11 @@ const Admin = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-4">
-              <div className="bg-gray-800 rounded-full p-2">
-                <Shield className="h-6 w-6 text-white" />
-              </div>
+              <img 
+                src="/logo.png" 
+                alt="DLM Logo" 
+                className="h-10 w-auto"
+              />
               <div>
                 <h1 className="text-xl font-bold text-gray-900">Admin Dashboard</h1>
                 <p className="text-sm text-gray-600">Manage all application submissions</p>

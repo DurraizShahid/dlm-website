@@ -11,6 +11,14 @@ const HeroSection = () => {
   return (
     <section className="text-white py-16 px-4 sm:py-24 sm:px-8 w-full">
       <div className="text-center max-w-4xl mx-auto space-y-8">
+        {/* Logo added here */}
+        <div className="flex justify-center">
+          <img 
+            src="/logo.png" 
+            alt="DLM Logo" 
+            className="h-24 w-auto mb-6"
+          />
+        </div>
         <h1 className="text-4xl sm:text-6xl font-extrabold leading-tight tracking-tight animate-fade-in-up">
           {translate("Your Idea Deserves the Spotlight—This is Your Chance.")}
         </h1>
