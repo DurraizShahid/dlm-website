@@ -222,32 +222,19 @@ const ApplyForm = () => {
     console.log('Has existing entry:', hasExistingEntry);
     console.log('Existing entry details:', existingEntry);
     
-    if (hasExistingEntry) {
-      // CNIC exists, show payment modal
-      console.log('Showing payment modal for existing CNIC');
-      setExistingCnicData(existingEntry);
-      setPendingFormData(data);
-      setShowPaymentModal(true);
-      console.log('Payment modal state set to:', true);
-      
-      // Additional debugging to ensure modal appears
-      setTimeout(() => {
-        console.log('Modal visibility check - showPaymentModal:', showPaymentModal);
-        if (!showPaymentModal) {
-          console.log('Forcing modal to show');
-          setShowPaymentModal(true);
-        }
-      }, 0);
-    } else {
-      // CNIC doesn't exist, proceed with normal submission
-      console.log('No existing CNIC found, proceeding with normal submission');
-      await submitApplication(data, false);
-    }
+    // For the new requirement, ALL submissions require payment
+    // But we still need to check CNIC to determine payment amount in the future
+    console.log('Showing payment modal for all submissions');
+    setExistingCnicData(hasExistingEntry ? existingEntry : null);
+    setPendingFormData(data);
+    setShowPaymentModal(true);
+    console.log('Payment modal state set to:', true);
   };
 
   const handlePaymentConfirm = async () => {
-    console.log('Payment confirmed for existing CNIC application');
+    console.log('Payment confirmed for application');
     if (pendingFormData) {
+      // Pass true to indicate this is a paid application (results in 'unpaid' status)
       await submitApplication(pendingFormData, true);
     }
   };
@@ -543,7 +530,7 @@ const ApplyForm = () => {
             <DialogHeader className="text-left sticky top-0 bg-white z-10 pb-4 border-b">
               <DialogTitle className="flex items-center space-x-2 text-xl">
                 <AlertCircle className="h-6 w-6 text-amber-500" />
-                <span>CNIC Already Registered</span>
+                <span>Application Fee Required</span>
               </DialogTitle>
             </DialogHeader>
             <div className="py-4">
@@ -555,29 +542,39 @@ const ApplyForm = () => {
                     </div>
                     <div className="ml-3">
                       <p className="text-sm text-amber-700">
-                        We found an existing application with CNIC: <strong>{existingCnicData?.cnic || 'N/A'}</strong>
+                        {existingCnicData ? (
+                          <>
+                            A fee of <strong className="text-lg">5,000 PKR</strong> is required for additional idea submissions.
+                          </>
+                        ) : (
+                          <>
+                            A fee of <strong className="text-lg">5,000 PKR</strong> is required for all idea submissions.
+                          </>
+                        )}
                       </p>
                     </div>
                   </div>
                 </div>
                 
-                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r">
-                  <h3 className="font-bold text-blue-800 mb-2">Previous Application Details</h3>
-                  <div className="grid grid-cols-1 gap-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="font-medium text-gray-700">Name:</span>
-                      <span className="text-gray-900">{existingCnicData?.full_name || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium text-gray-700">Idea:</span>
-                      <span className="text-gray-900">{existingCnicData?.idea_title || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium text-gray-700">Status:</span>
-                      <span className="text-gray-900 capitalize">{existingCnicData?.status || 'N/A'}</span>
+                {existingCnicData && (
+                  <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r">
+                    <h3 className="font-bold text-blue-800 mb-2">Previous Application Details</h3>
+                    <div className="grid grid-cols-1 gap-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-700">Name:</span>
+                        <span className="text-gray-900">{existingCnicData?.full_name || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-700">Idea:</span>
+                        <span className="text-gray-900">{existingCnicData?.idea_title || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-700">Status:</span>
+                        <span className="text-gray-900 capitalize">{existingCnicData?.status || 'N/A'}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
                 
                 <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r">
                   <div className="flex">
@@ -586,7 +583,7 @@ const ApplyForm = () => {
                     </div>
                     <div className="ml-3">
                       <p className="text-sm text-red-700">
-                        To submit a new application with the same CNIC, you need to pay a fee of <strong className="text-lg">5,000 PKR</strong>.
+                        Your application will be marked as "Unpaid" until an admin confirms your payment.
                       </p>
                     </div>
                   </div>
@@ -662,7 +659,7 @@ const ApplyForm = () => {
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                   <h4 className="font-bold text-gray-800 mb-2">Important Information</h4>
                   <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
-                    <li>Your new application will be marked as "Unpaid" until an admin confirms your payment</li>
+                    <li>Your application will be marked as "Unpaid" until an admin confirms your payment</li>
                     <li>Please keep a screenshot of your payment receipt for reference</li>
                     <li>Payment confirmation may take up to 24 hours</li>
                     <li>For payment issues, contact support with your CNIC number</li>
@@ -691,7 +688,9 @@ const ApplyForm = () => {
                     </svg>
                     Processing...
                   </span>
-                ) : 'Pay 5,000 PKR & Submit'}
+                ) : (
+                  existingCnicData ? 'Pay 5,000 PKR & Submit' : 'Pay 5,000 PKR & Submit'
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>

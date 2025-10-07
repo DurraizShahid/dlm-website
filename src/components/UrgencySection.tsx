@@ -8,7 +8,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 const UrgencySection = () => {
   const { translate } = useLanguage();
   // Set the target date for the countdown to October 8th, 2025
-  const targetDate = new Date('2025-10-08T00:00:00'); // October 8th, 2025, at midnight
+  const targetDate = new Date('2025-10-15T00:00:00'); // October 8th, 2025, at midnight
 
   const calculateTimeLeft = () => {
     const difference = +targetDate - +new Date();

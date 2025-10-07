@@ -20,7 +20,8 @@ import {
   Download,
   PlayCircle,
   User,
-  Settings
+  Settings,
+  Lock
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -48,6 +49,11 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
   const translate = (key: keyof typeof translations) => {
     return translations[key]?.[language] || translations[key]?.en || key;
   };
+
+  // Check if user has at least one paid application
+  const hasPaidApplication = useMemo(() => {
+    return applications.some(app => app.status === 'paid');
+  }, [applications]);
 
   // Get user's full name from applications data
   const getUserName = useMemo(() => {
@@ -214,11 +220,18 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-8">
         <Tabs defaultValue="applications" className="space-y-4 sm:space-y-6">
           <TabsList className="grid w-full grid-cols-2 h-auto">
-            <TabsTrigger value="applications" className="flex items-center justify-center space-x-1 sm:space-x-2 py-2 sm:py-3 text-xs sm:text-sm">
+            <TabsTrigger 
+              value="applications" 
+              id="tabs-trigger-applications"
+              className="flex items-center justify-center space-x-1 sm:space-x-2 py-2 sm:py-3 text-xs sm:text-sm"
+            >
               <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="truncate">My Applications</span>
             </TabsTrigger>
-            <TabsTrigger value="resources" className="flex items-center justify-center space-x-1 sm:space-x-2 py-2 sm:py-3 text-xs sm:text-sm">
+            <TabsTrigger 
+              value="resources" 
+              className="flex items-center justify-center space-x-1 sm:space-x-2 py-2 sm:py-3 text-xs sm:text-sm"
+            >
               <BookOpen className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="truncate">Learning Resources</span>
             </TabsTrigger>
@@ -295,82 +308,122 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
 
           {/* Resources Tab */}
           <TabsContent value="resources" className="space-y-4 sm:space-y-6">
-            <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 px-2 sm:px-0">
-              {/* Guidebook #1 */}
-              <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                <CardHeader className="pb-3 px-4 sm:px-6">
-                  <CardTitle className="text-base sm:text-lg">Guidebook #1</CardTitle>
-                  <Badge variant="outline" className="w-fit text-xs">Getting Started</Badge>
-                </CardHeader>
-                <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
-                  <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">Essential first steps for entrepreneurs and business fundamentals</p>
-                  <Button variant="default" size="sm" className="w-full text-xs sm:text-sm h-9 sm:h-10">
-                    <Download className="h-3 w-3 mr-2" />
-                    Download Guidebook #1
+            {!hasPaidApplication ? (
+              <div className="text-center py-12">
+                <div className="mx-auto max-w-md">
+                  <Lock className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Guidebooks Locked</h3>
+                  <p className="text-gray-600 mb-6">
+                    Please pay the application fee for at least one submission to unlock access to the guidebooks.
+                  </p>
+                  <Button variant="default" onClick={() => document.getElementById('tabs-trigger-applications')?.click()}>
+                    View Applications
                   </Button>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 px-2 sm:px-0">
+                {/* Guidebook #1 */}
+                <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                  <CardHeader className="pb-3 px-4 sm:px-6">
+                    <CardTitle className="text-base sm:text-lg">Guidebook #1</CardTitle>
+                    <Badge variant="outline" className="w-fit text-xs">Getting Started</Badge>
+                  </CardHeader>
+                  <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
+                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">Essential first steps for entrepreneurs and business fundamentals</p>
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      className="w-full text-xs sm:text-sm h-9 sm:h-10"
+                      onClick={() => window.open('/guidebooks/guidebook1.pdf', '_blank')}
+                    >
+                      <Download className="h-3 w-3 mr-2" />
+                      Download Guidebook #1
+                    </Button>
+                  </CardContent>
+                </Card>
 
-              {/* Guidebook #2 */}
-              <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                <CardHeader className="pb-3 px-4 sm:px-6">
-                  <CardTitle className="text-base sm:text-lg">Guidebook #2</CardTitle>
-                  <Badge variant="outline" className="w-fit text-xs">Business Planning</Badge>
-                </CardHeader>
-                <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
-                  <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">Comprehensive guide to creating effective business plans and strategies</p>
-                  <Button variant="default" size="sm" className="w-full text-xs sm:text-sm h-9 sm:h-10">
-                    <Download className="h-3 w-3 mr-2" />
-                    Download Guidebook #2
-                  </Button>
-                </CardContent>
-              </Card>
+                {/* Guidebook #2 */}
+                <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                  <CardHeader className="pb-3 px-4 sm:px-6">
+                    <CardTitle className="text-base sm:text-lg">Guidebook #2</CardTitle>
+                    <Badge variant="outline" className="w-fit text-xs">Business Planning</Badge>
+                  </CardHeader>
+                  <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
+                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">Comprehensive guide to creating effective business plans and strategies</p>
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      className="w-full text-xs sm:text-sm h-9 sm:h-10"
+                      onClick={() => window.open('/guidebooks/guidebook2.pdf', '_blank')}
+                    >
+                      <Download className="h-3 w-3 mr-2" />
+                      Download Guidebook #2
+                    </Button>
+                  </CardContent>
+                </Card>
 
-              {/* Guidebook #3 */}
-              <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                <CardHeader className="pb-3 px-4 sm:px-6">
-                  <CardTitle className="text-base sm:text-lg">Guidebook #3</CardTitle>
-                  <Badge variant="outline" className="w-fit text-xs">Marketing</Badge>
-                </CardHeader>
-                <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
-                  <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">Marketing strategies and customer acquisition techniques for new businesses</p>
-                  <Button variant="default" size="sm" className="w-full text-xs sm:text-sm h-9 sm:h-10">
-                    <Download className="h-3 w-3 mr-2" />
-                    Download Guidebook #3
-                  </Button>
-                </CardContent>
-              </Card>
+                {/* Guidebook #3 */}
+                <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                  <CardHeader className="pb-3 px-4 sm:px-6">
+                    <CardTitle className="text-base sm:text-lg">Guidebook #3</CardTitle>
+                    <Badge variant="outline" className="w-fit text-xs">Marketing</Badge>
+                  </CardHeader>
+                  <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
+                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">Marketing strategies and customer acquisition techniques for new businesses</p>
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      className="w-full text-xs sm:text-sm h-9 sm:h-10"
+                      onClick={() => window.open('/guidebooks/guidebook3.pdf', '_blank')}
+                    >
+                      <Download className="h-3 w-3 mr-2" />
+                      Download Guidebook #3
+                    </Button>
+                  </CardContent>
+                </Card>
 
-              {/* Guidebook #4 */}
-              <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                <CardHeader className="pb-3 px-4 sm:px-6">
-                  <CardTitle className="text-base sm:text-lg">Guidebook #4</CardTitle>
-                  <Badge variant="outline" className="w-fit text-xs">Finance</Badge>
-                </CardHeader>
-                <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
-                  <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">Financial management, funding options, and investment strategies</p>
-                  <Button variant="default" size="sm" className="w-full text-xs sm:text-sm h-9 sm:h-10">
-                    <Download className="h-3 w-3 mr-2" />
-                    Download Guidebook #4
-                  </Button>
-                </CardContent>
-              </Card>
+                {/* Guidebook #4 */}
+                <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                  <CardHeader className="pb-3 px-4 sm:px-6">
+                    <CardTitle className="text-base sm:text-lg">Guidebook #4</CardTitle>
+                    <Badge variant="outline" className="w-fit text-xs">Finance</Badge>
+                  </CardHeader>
+                  <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
+                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">Financial management, funding options, and investment strategies</p>
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      className="w-full text-xs sm:text-sm h-9 sm:h-10"
+                      onClick={() => window.open('/guidebooks/guidebook4.pdf', '_blank')}
+                    >
+                      <Download className="h-3 w-3 mr-2" />
+                      Download Guidebook #4
+                    </Button>
+                  </CardContent>
+                </Card>
 
-              {/* Guidebook #5 */}
-              <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                <CardHeader className="pb-3 px-4 sm:px-6">
-                  <CardTitle className="text-base sm:text-lg">Guidebook #5</CardTitle>
-                  <Badge variant="outline" className="w-fit text-xs">Growth & Scale</Badge>
-                </CardHeader>
-                <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
-                  <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">Scaling your business, team building, and sustainable growth practices</p>
-                  <Button variant="default" size="sm" className="w-full text-xs sm:text-sm h-9 sm:h-10">
-                    <Download className="h-3 w-3 mr-2" />
-                    Download Guidebook #5
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
+                {/* Guidebook #5 */}
+                <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                  <CardHeader className="pb-3 px-4 sm:px-6">
+                    <CardTitle className="text-base sm:text-lg">Guidebook #5</CardTitle>
+                    <Badge variant="outline" className="w-fit text-xs">Growth & Scale</Badge>
+                  </CardHeader>
+                  <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
+                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">Scaling your business, team building, and sustainable growth practices</p>
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      className="w-full text-xs sm:text-sm h-9 sm:h-10"
+                      onClick={() => window.open('/guidebooks/guidebook5.pdf', '_blank')}
+                    >
+                      <Download className="h-3 w-3 mr-2" />
+                      Download Guidebook #5
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>
