@@ -21,7 +21,10 @@ import {
   PlayCircle,
   User,
   Settings,
-  Lock
+  Lock,
+  AlertCircle,
+  MessageCircle,
+  Upload
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -54,6 +57,17 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
   const hasPaidApplication = useMemo(() => {
     return applications.some(app => app.status === 'paid');
   }, [applications]);
+
+  // Check if user has at least one application with approved or pending status
+  const hasApprovedOrPendingApplication = useMemo(() => {
+    return applications.some(app => app.status === 'approved' || app.status === 'pending');
+  }, [applications]);
+
+  // User can access guidebooks if they have at least one paid application 
+  // OR at least one application with approved or pending status
+  const canAccessGuidebooks = useMemo(() => {
+    return hasPaidApplication || hasApprovedOrPendingApplication;
+  }, [hasPaidApplication, hasApprovedOrPendingApplication]);
 
   // Get user's full name from applications data
   const getUserName = useMemo(() => {
@@ -239,6 +253,103 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
 
           {/* Applications Tab */}
           <TabsContent value="applications" className="space-y-4 sm:space-y-6">
+            {/* Unpaid Applications Notification */}
+            {applications.some(app => app.status === 'unpaid') && (
+              <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r mx-2 sm:mx-0">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <AlertCircle className="h-5 w-5 text-amber-500" />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-bold text-amber-800">Unpaid Applications Require Payment</h3>
+                    <div className="mt-2 text-sm text-amber-700">
+                      <p>You have one or more unpaid applications. Please complete the payment process to have your application reviewed by our team.</p>
+                      
+                      <div className="mt-3 space-y-3">
+                        <h4 className="font-bold text-amber-800">Payment Methods</h4>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {/* EasyPaisa */}
+                          <div className="border border-amber-200 rounded-lg p-3 bg-white">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <img 
+                                src="/easypaisalogo.png" 
+                                alt="EasyPaisa" 
+                                className="h-6 w-auto"
+                              />
+                              <span className="font-bold text-gray-800 text-sm">EasyPaisa</span>
+                            </div>
+                            <p className="text-xs text-gray-600 mb-1">Mobile Account</p>
+                            <p className="font-mono bg-gray-100 p-1 rounded text-center text-xs">0333 32101200</p>
+                          </div>
+                          
+                          {/* JazzCash */}
+                          <div className="border border-amber-200 rounded-lg p-3 bg-white">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <img 
+                                src="/jazzcashlogo.png" 
+                                alt="JazzCash" 
+                                className="h-6 w-auto"
+                              />
+                              <span className="font-bold text-gray-800 text-sm">JazzCash</span>
+                            </div>
+                            <p className="text-xs text-gray-600 mb-1">Mobile Account</p>
+                            <p className="font-mono bg-gray-100 p-1 rounded text-center text-xs">0333 32101200</p>
+                          </div>
+                        </div>
+                        
+                        {/* Bank Transfer */}
+                        <div className="border border-amber-200 rounded-lg p-3 bg-white">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <img 
+                              src="/bankalfalahlogo.png" 
+                              alt="Bank Alfalah" 
+                              className="h-6 w-auto"
+                            />
+                            <span className="font-bold text-gray-800 text-sm">Bank Transfer</span>
+                          </div>
+                          <div className="space-y-1 ml-8">
+                            <div className="flex justify-between text-xs">
+                              <span className="font-medium text-gray-700">Bank:</span>
+                              <span className="text-gray-900">Bank Alfalah Islamic</span>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                              <span className="font-medium text-gray-700">Account Title:</span>
+                              <span className="text-gray-900">Fancy Tech Industries SMC (Pvt) Ltd</span>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                              <span className="font-medium text-gray-700">Account #:</span>
+                              <span className="font-mono text-gray-900">5002491934</span>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                              <span className="font-medium text-gray-700">IBAN:</span>
+                              <span className="font-mono text-gray-900">PK42ALFH5639005002491934</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4 flex flex-col sm:flex-row gap-2">
+                        <Button variant="default" size="sm" className="text-xs">
+                          <Upload className="h-3 w-3 mr-1" />
+                          Upload Payment Receipt
+                        </Button>
+                        <Button variant="outline" size="sm" className="text-xs">
+                          <MessageCircle className="h-3 w-3 mr-1" />
+                          Send via WhatsApp
+                        </Button>
+                      </div>
+                      
+                      <p className="mt-3 text-xs text-amber-600">
+                        Once you pay, your application will be processed and reviewed by our team and approved or rejected accordingly. 
+                        Payment confirmation may take up to 24 hours.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {applications.length === 0 ? (
               <Alert className="mx-2 sm:mx-0">
                 <FileText className="h-4 w-4" />
@@ -308,13 +419,13 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
 
           {/* Resources Tab */}
           <TabsContent value="resources" className="space-y-4 sm:space-y-6">
-            {!hasPaidApplication ? (
+            {!canAccessGuidebooks ? (
               <div className="text-center py-12">
                 <div className="mx-auto max-w-md">
                   <Lock className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-xl font-bold text-gray-900 mb-2">Guidebooks Locked</h3>
                   <p className="text-gray-600 mb-6">
-                    Please pay the application fee for at least one submission to unlock access to the guidebooks.
+                    Please submit an application and have it approved or pay the application fee to unlock access to the guidebooks.
                   </p>
                   <Button variant="default" onClick={() => document.getElementById('tabs-trigger-applications')?.click()}>
                     View Applications
