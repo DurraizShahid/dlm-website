@@ -284,7 +284,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+        <div className="max-w-8xl mx-auto px-3 sm:px-4 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-3 sm:py-4 gap-3 sm:gap-0">
             <div className="flex items-center space-x-3 sm:space-x-4">
               {/* Logo added here */}
@@ -313,7 +313,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-8">
+      <div className="max-w-8xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-8">
         <Tabs defaultValue="applications" className="space-y-4 sm:space-y-6">
           <TabsList className="grid w-full grid-cols-2 h-auto">
             <TabsTrigger 
@@ -350,7 +350,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
                       <div className="mt-3 space-y-3">
                         <h4 className="font-bold text-amber-800">Payment Methods</h4>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                           {/* EasyPaisa */}
                           <div className="border border-amber-200 rounded-lg p-3 bg-white">
                             <div className="flex items-center space-x-2 mb-2">
@@ -378,34 +378,34 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
                             <p className="text-xs text-gray-600 mb-1">Mobile Account</p>
                             <p className="font-mono bg-gray-100 p-1 rounded text-center text-xs">0333 32101200</p>
                           </div>
-                        </div>
-                        
-                        {/* Bank Transfer */}
-                        <div className="border border-amber-200 rounded-lg p-3 bg-white">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <img 
-                              src="/bankalfalahlogo.png" 
-                              alt="Bank Alfalah" 
-                              className="h-6 w-auto"
-                            />
-                            <span className="font-bold text-gray-800 text-sm">Bank Transfer</span>
-                          </div>
-                          <div className="space-y-1 ml-8">
-                            <div className="flex justify-between text-xs">
-                              <span className="font-medium text-gray-700">Bank:</span>
-                              <span className="text-gray-900">Bank Alfalah Islamic</span>
+                          
+                          {/* Bank Transfer */}
+                          <div className="border border-amber-200 rounded-lg p-3 bg-white">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <img 
+                                src="/bankalfalahlogo.png" 
+                                alt="Bank Alfalah" 
+                                className="h-6 w-auto"
+                              />
+                              <span className="font-bold text-gray-800 text-sm">Bank Transfer</span>
                             </div>
-                            <div className="flex justify-between text-xs">
-                              <span className="font-medium text-gray-700">Account Title:</span>
-                              <span className="text-gray-900">Fancy Tech Industries SMC (Pvt) Ltd</span>
-                            </div>
-                            <div className="flex justify-between text-xs">
-                              <span className="font-medium text-gray-700">Account #:</span>
-                              <span className="font-mono text-gray-900">5002491934</span>
-                            </div>
-                            <div className="flex justify-between text-xs">
-                              <span className="font-medium text-gray-700">IBAN:</span>
-                              <span className="font-mono text-gray-900">PK42ALFH5639005002491934</span>
+                            <div className="space-y-1 ml-8">
+                              <div className="flex justify-between text-xs">
+                                <span className="font-medium text-gray-700">Bank:</span>
+                                <span className="text-gray-900">Bank Alfalah Islamic</span>
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                <span className="font-medium text-gray-700">Account Title:</span>
+                                <span className="text-gray-900">Fancy Tech Industries SMC (Pvt) Ltd</span>
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                <span className="font-medium text-gray-700">Account #:</span>
+                                <span className="font-mono text-gray-900">5002491934</span>
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                <span className="font-medium text-gray-700">IBAN:</span>
+                                <span className="font-mono text-gray-900">PK42ALFH5639005002491934</span>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -472,7 +472,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
                       
                       <div>
                         <h4 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">Idea Description</h4>
-                        <p className="text-xs sm:text-sm text-gray-600 line-clamp-3 leading-relaxed">{app.idea_description}</p>
+                        <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">{app.idea_description}</p>
                       </div>
 
                       {app.video_url && (
@@ -594,7 +594,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
                 </div>
               </div>
             ) : (
-              <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 px-2 sm:px-0">
+              <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 px-2 sm:px-0">
                 {/* Guidebook #1 */}
                 <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
                   <CardHeader className="pb-3 px-4 sm:px-6">

@@ -18,6 +18,10 @@ export default {
       },
     },
     extend: {
+      maxWidth: {
+        '8xl': '90rem',
+        '9xl': '105rem',
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

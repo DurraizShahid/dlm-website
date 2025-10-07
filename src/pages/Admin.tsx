@@ -401,7 +401,7 @@ ${application.idea_description}
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-9xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-4">
               <img 
@@ -429,7 +429,7 @@ ${application.idea_description}
       </div>
 
       {/* Stats Cards */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-9xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardContent className="p-6">
@@ -487,7 +487,7 @@ ${application.idea_description}
         </div>
 
         {/* Applications Table */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-9xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
@@ -521,32 +521,32 @@ ${application.idea_description}
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Age</TableHead>
-                        <TableHead>CNIC</TableHead>
-                        <TableHead>Idea Title</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Video</TableHead>
-                        <TableHead>Screenshot</TableHead> {/* Add Screenshot column */}
-                        <TableHead>Submitted</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <TableHead className="whitespace-nowrap">Name</TableHead>
+                        <TableHead className="whitespace-nowrap">Email</TableHead>
+                        <TableHead className="whitespace-nowrap">Age</TableHead>
+                        <TableHead className="whitespace-nowrap">CNIC</TableHead>
+                        <TableHead className="whitespace-nowrap">Idea Title</TableHead>
+                        <TableHead className="whitespace-nowrap">Status</TableHead>
+                        <TableHead className="whitespace-nowrap">Video</TableHead>
+                        <TableHead className="whitespace-nowrap">Screenshot</TableHead>
+                        <TableHead className="whitespace-nowrap">Submitted</TableHead>
+                        <TableHead className="whitespace-nowrap">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {applications.map((app) => (
                         <TableRow key={app.id}>
-                          <TableCell className="font-medium">{app.full_name}</TableCell>
-                          <TableCell>{app.email}</TableCell>
-                          <TableCell>{app.age}</TableCell>
-                          <TableCell className="font-mono text-sm">{app.cnic}</TableCell>
-                          <TableCell>
-                            <div className="max-w-xs truncate" title={app.idea_title}>
+                          <TableCell className="font-medium whitespace-nowrap">{app.full_name}</TableCell>
+                          <TableCell className="whitespace-nowrap">{app.email}</TableCell>
+                          <TableCell className="whitespace-nowrap">{app.age}</TableCell>
+                          <TableCell className="font-mono text-sm whitespace-nowrap">{app.cnic}</TableCell>
+                          <TableCell className="min-w-[250px]">
+                            <div className="" title={app.idea_title}>
                               {app.idea_title}
                             </div>
                           </TableCell>
-                          <TableCell>{getStatusBadge(app.status)}</TableCell>
-                          <TableCell>
+                          <TableCell className="whitespace-nowrap">{getStatusBadge(app.status)}</TableCell>
+                          <TableCell className="whitespace-nowrap">
                             {app.video_url ? (
                               <Button
                                 variant="outline"
@@ -560,7 +560,7 @@ ${application.idea_description}
                               <span className="text-gray-400 text-sm">No video</span>
                             )}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="whitespace-nowrap">
                             {app.payment_screenshot_url ? (
                               <Button
                                 variant="outline"
@@ -574,11 +574,11 @@ ${application.idea_description}
                               <span className="text-gray-400 text-sm">No screenshot</span>
                             )}
                           </TableCell>
-                          <TableCell className="text-sm text-gray-600">
+                          <TableCell className="text-sm text-gray-600 whitespace-nowrap">
                             {new Date(app.created_at).toLocaleDateString()}
                           </TableCell>
-                          <TableCell>
-                            <div className="flex space-x-1 flex-wrap gap-1">
+                          <TableCell className="whitespace-nowrap">
+                            <div className="flex flex-wrap gap-1">
                               <Button
                                 variant="outline"
                                 size="sm"
