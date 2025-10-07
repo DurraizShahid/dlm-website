@@ -162,23 +162,73 @@ const Admin = () => {
 
   const handlePostToTikTok = async (application: Application) => {
     try {
-      // For now, this is a placeholder function
-      // In a real implementation, you would integrate with TikTok's API
-      toast.info(`Preparing to post ${application.idea_title} to TikTok...`);
+      toast.info(`Preparing to post "${application.idea_title}" to TikTok...`);
       
-      // You can add actual TikTok API integration here
-      // This could include:
-      // - Uploading the video to TikTok
-      // - Setting the caption with idea title and description
-      // - Adding relevant hashtags
+      // Check if the application has a video
+      if (!application.video_url) {
+        toast.error('No video found for this application');
+        return;
+      }
       
-      setTimeout(() => {
-        toast.success(`Successfully posted "${application.idea_title}" to TikTok!`);
-      }, 2000);
+      // Generate a signed URL for the video that TikTok can access
+      const videoSignedUrl = await generateVideoSignedUrl(application.video_url, 7200); // 2 hour expiry
       
+      if (!videoSignedUrl) {
+        toast.error('Failed to generate video access URL');
+        return;
+      }
+      
+      // TikTok API configuration
+      const TIKTOK_API_BASE_URL = 'https://open.tiktokapis.com/v2';
+      const TIKTOK_ACCESS_TOKEN = import.meta.env.VITE_TIKTOK_ACCESS_TOKEN;
+      
+      // Check if TikTok credentials are configured
+      if (!TIKTOK_ACCESS_TOKEN) {
+        toast.error('TikTok API not configured. Please set VITE_TIKTOK_ACCESS_TOKEN in your .env file.');
+        return;
+      }
+      
+      // Create caption with idea title, description and hashtags
+      const caption = `${application.idea_title}
+
+${application.idea_description}
+
+#DreamLauncherMovement #Innovation #Pakistan #Entrepreneurship #Startup`;
+      
+      // Initialize the video upload to TikTok
+      const initResponse = await fetch(`${TIKTOK_API_BASE_URL}/post/publish/inbox/video/init/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${TIKTOK_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json; charset=UTF-8'
+        },
+        body: JSON.stringify({
+          source_info: {
+            source: 'PULL_FROM_URL',
+            video_url: videoSignedUrl
+          }
+        })
+      });
+      
+      if (!initResponse.ok) {
+        const errorData = await initResponse.json().catch(() => ({}));
+        console.error('TikTok API init error:', errorData);
+        toast.error(`Failed to initialize TikTok upload: ${errorData.error?.message || initResponse.statusText}`);
+        return;
+      }
+      
+      const initData = await initResponse.json();
+      const publishId = initData.data?.publish_id;
+      
+      if (!publishId) {
+        toast.error('Failed to get publish ID from TikTok API');
+        return;
+      }
+      
+      toast.success(`Successfully initiated upload of "${application.idea_title}" to TikTok! The user will be notified in their TikTok inbox to complete the post.`);
     } catch (error) {
       console.error('Error posting to TikTok:', error);
-      toast.error('Error posting to TikTok');
+      toast.error(`Error posting to TikTok: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
