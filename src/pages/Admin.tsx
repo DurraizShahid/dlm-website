@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { generateVideoSignedUrl } from '@/utils/videoUtils';
+import { refreshTikTokAccessToken, postVideoToTikTok, generateTikTokOAuthUrl, exchangeCodeForAccessToken, getTikTokUserInfo, testTikTokConnection } from '@/utils/tiktokUtils';
 import { toast } from 'sonner';
 import { 
   Shield, 
@@ -26,7 +27,8 @@ import {
   PlayCircle,
   LogOut,
   Download,
-  Image as ImageIcon
+  Image as ImageIcon,
+  LogIn
 } from 'lucide-react';
 
 interface Application {
@@ -39,7 +41,7 @@ interface Application {
   idea_title: string;
   idea_description: string;
   video_url?: string;
-  payment_screenshot_url?: string; // Add screenshot URL field
+  payment_screenshot_url?: string;
   status: 'pending' | 'under_review' | 'approved' | 'rejected' | 'unpaid' | 'paid';
   created_at: string;
 }
@@ -51,6 +53,8 @@ const Admin = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [tiktokUser, setTiktokUser] = useState<any>(null);
+  const [tiktokAccessToken, setTiktokAccessToken] = useState<string | null>(null);
 
   // Check if already authenticated (from session storage)
   useEffect(() => {
@@ -59,7 +63,72 @@ const Admin = () => {
       setIsAuthenticated(true);
       fetchApplications();
     }
+    
+    // Check for TikTok OAuth callback
+    handleTikTokCallback();
   }, []);
+
+  // Handle TikTok OAuth callback
+  const handleTikTokCallback = async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const state = urlParams.get('state');
+    const error = urlParams.get('error');
+    
+    if (error) {
+      toast.error(`TikTok OAuth error: ${error}`);
+      return;
+    }
+    
+    if (code && state) {
+      // Verify state parameter to prevent CSRF attacks
+      const storedState = sessionStorage.getItem('tiktok_oauth_state');
+      if (state !== storedState) {
+        toast.error('Invalid OAuth state parameter');
+        return;
+      }
+      
+      try {
+        // Exchange code for access token
+        const tokenData = await exchangeCodeForAccessToken(code);
+        setTiktokAccessToken(tokenData.access_token);
+        
+        // Store tokens in sessionStorage
+        sessionStorage.setItem('tiktok_access_token', tokenData.access_token);
+        sessionStorage.setItem('tiktok_refresh_token', tokenData.refresh_token);
+        sessionStorage.setItem('tiktok_token_expires_at', 
+          (Date.now() + (tokenData.expires_in * 1000)).toString());
+        
+        // Get user info
+        const userInfo = await getTikTokUserInfo(tokenData.access_token);
+        setTiktokUser(userInfo);
+        
+        toast.success('Successfully connected to TikTok!');
+        
+        // Remove OAuth parameters from URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } catch (error) {
+        console.error('Error handling TikTok callback:', error);
+        toast.error('Failed to connect to TikTok');
+      }
+    } else {
+      // Check if we have stored tokens
+      const storedAccessToken = sessionStorage.getItem('tiktok_access_token');
+      const tokenExpiry = sessionStorage.getItem('tiktok_token_expires_at');
+      
+      if (storedAccessToken && tokenExpiry && Date.now() < parseInt(tokenExpiry)) {
+        setTiktokAccessToken(storedAccessToken);
+        
+        // Get user info
+        try {
+          const userInfo = await getTikTokUserInfo(storedAccessToken);
+          setTiktokUser(userInfo);
+        } catch (error) {
+          console.error('Error getting TikTok user info:', error);
+        }
+      }
+    }
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,6 +153,22 @@ const Admin = () => {
     setPassword('');
     setApplications([]);
     toast.info('Logged out successfully');
+  };
+
+  const handleTikTokLogin = () => {
+    // Generate OAuth URL and redirect user
+    const oauthUrl = generateTikTokOAuthUrl();
+    window.location.href = oauthUrl;
+  };
+
+  const handleTikTokLogout = () => {
+    setTiktokUser(null);
+    setTiktokAccessToken(null);
+    sessionStorage.removeItem('tiktok_access_token');
+    sessionStorage.removeItem('tiktok_refresh_token');
+    sessionStorage.removeItem('tiktok_token_expires_at');
+    sessionStorage.removeItem('tiktok_oauth_state');
+    toast.info('Disconnected from TikTok');
   };
 
   const fetchApplications = async () => {
@@ -192,7 +277,20 @@ const Admin = () => {
         return;
       }
       
+      // Check if we have a TikTok access token
+      let accessToken = tiktokAccessToken || sessionStorage.getItem('tiktok_access_token');
+      
+      if (!accessToken) {
+        toast.error('Please connect your TikTok account first');
+        return;
+      }
+      
+      // Log token info for debugging (don't log the full token for security)
+      console.log('Using TikTok access token (first 10 chars):', accessToken.substring(0, 10));
+      console.log('Token length:', accessToken.length);
+      
       // Generate a signed URL for the video that TikTok can access
+      toast.info('Generating signed URL for video...');
       const videoSignedUrl = await generateVideoSignedUrl(application.video_url, 7200); // 2 hour expiry
       
       if (!videoSignedUrl) {
@@ -200,13 +298,21 @@ const Admin = () => {
         return;
       }
       
-      // TikTok API configuration
-      const TIKTOK_API_BASE_URL = 'https://open.tiktokapis.com/v2';
-      const TIKTOK_ACCESS_TOKEN = import.meta.env.VITE_TIKTOK_ACCESS_TOKEN;
+      // Log the video URL for debugging
+      console.log('Posting video with signed URL:', videoSignedUrl);
       
-      // Check if TikTok credentials are configured
-      if (!TIKTOK_ACCESS_TOKEN) {
-        toast.error('TikTok API not configured. Please set VITE_TIKTOK_ACCESS_TOKEN in your .env file.');
+      // Test if the URL is accessible
+      toast.info('Testing video URL accessibility...');
+      try {
+        const urlTestResponse = await fetch(videoSignedUrl, { method: 'HEAD' });
+        console.log('Video URL test response status:', urlTestResponse.status);
+        if (!urlTestResponse.ok) {
+          toast.error(`Video URL not accessible: ${urlTestResponse.status} - ${urlTestResponse.statusText}`);
+          return;
+        }
+      } catch (urlError) {
+        console.error('Error testing video URL:', urlError);
+        toast.error('Error testing video URL accessibility');
         return;
       }
       
@@ -217,40 +323,31 @@ ${application.idea_description}
 
 #DreamLauncherMovement #Innovation #Pakistan #Entrepreneurship #Startup`;
       
-      // Initialize the video upload to TikTok
-      const initResponse = await fetch(`${TIKTOK_API_BASE_URL}/post/publish/inbox/video/init/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${TIKTOK_ACCESS_TOKEN}`,
-          'Content-Type': 'application/json; charset=UTF-8'
-        },
-        body: JSON.stringify({
-          source_info: {
-            source: 'PULL_FROM_URL',
-            video_url: videoSignedUrl
-          }
-        })
-      });
+      // Post video to TikTok
+      toast.info('Posting video to TikTok...');
+      const publishId = await postVideoToTikTok(
+        videoSignedUrl,
+        application.idea_title,
+        caption,
+        accessToken
+      );
       
-      if (!initResponse.ok) {
-        const errorData = await initResponse.json().catch(() => ({}));
-        console.error('TikTok API init error:', errorData);
-        toast.error(`Failed to initialize TikTok upload: ${errorData.error?.message || initResponse.statusText}`);
-        return;
+      if (publishId) {
+        toast.success(`Successfully initiated upload of "${application.idea_title}" to TikTok! The user will be notified in their TikTok inbox to complete the post.`);
+      } else {
+        toast.error('Failed to post video to TikTok');
       }
-      
-      const initData = await initResponse.json();
-      const publishId = initData.data?.publish_id;
-      
-      if (!publishId) {
-        toast.error('Failed to get publish ID from TikTok API');
-        return;
-      }
-      
-      toast.success(`Successfully initiated upload of "${application.idea_title}" to TikTok! The user will be notified in their TikTok inbox to complete the post.`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error posting to TikTok:', error);
-      toast.error(`Error posting to TikTok: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      // Provide more detailed error information
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        toast.error('Network error: Unable to connect to TikTok API. This may be due to CORS restrictions, network connectivity issues, or an invalid access token.');
+      } else if (error.message) {
+        toast.error(`Error posting to TikTok: ${error.message}`);
+      } else {
+        toast.error('Unknown error occurred while posting to TikTok');
+      }
     }
   };
 
@@ -327,6 +424,56 @@ ${application.idea_description}
     a.click();
     window.URL.revokeObjectURL(url);
     toast.success('Applications exported to CSV');
+  };
+
+  const validateTikTokToken = async () => {
+    if (!tiktokAccessToken) {
+      toast.error('No TikTok access token found');
+      return false;
+    }
+    
+    try {
+      toast.info('Validating TikTok access token...');
+      const userInfo = await getTikTokUserInfo(tiktokAccessToken);
+      if (userInfo) {
+        toast.success('TikTok access token is valid');
+        return true;
+      } else {
+        toast.error('TikTok access token is invalid or expired');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error validating TikTok token:', error);
+      toast.error('Error validating TikTok access token');
+      return false;
+    }
+  };
+
+  const testTikTokConnectionHandler = async () => {
+    if (!tiktokAccessToken) {
+      toast.error('Please connect your TikTok account first');
+      return;
+    }
+    
+    // First validate the token
+    const isTokenValid = await validateTikTokToken();
+    if (!isTokenValid) {
+      return;
+    }
+    
+    toast.info('Testing TikTok connection...');
+    
+    try {
+      const isValid = await testTikTokConnection(tiktokAccessToken);
+      if (isValid) {
+        toast.success('TikTok connection is working correctly!');
+      } else {
+        toast.error('TikTok connection failed. Please check your access token and network connectivity.');
+      }
+    } catch (error) {
+      console.error('Error testing TikTok connection:', error);
+      toast.error('Error testing TikTok connection');
+    }
   };
 
   // Login Form
@@ -415,6 +562,41 @@ ${application.idea_description}
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              {tiktokUser ? (
+                <div className="flex items-center space-x-2 bg-purple-100 px-3 py-1 rounded-full">
+                  <span className="text-sm font-medium text-purple-800">
+                    Connected as {tiktokUser?.user?.display_name || tiktokUser?.user?.username || 'TikTok User'}
+                  </span>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleTikTokLogout}
+                    className="text-purple-600 border-purple-300 hover:bg-purple-50"
+                  >
+                    Disconnect
+                  </Button>
+                </div>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleTikTokLogin}
+                  className="text-purple-600 border-purple-300 hover:bg-purple-50"
+                >
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Connect TikTok
+                </Button>
+              )}
+              {tiktokAccessToken && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={testTikTokConnectionHandler}
+                  className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                >
+                  Test TikTok Connection
+                </Button>
+              )}
               <Button variant="outline" onClick={exportToCSV} size="sm">
                 <Download className="h-4 w-4 mr-2" />
                 Export CSV
@@ -621,6 +803,7 @@ ${application.idea_description}
                                 size="sm"
                                 onClick={() => handlePostToTikTok(app)}
                                 className="text-purple-600 hover:text-purple-700"
+                                disabled={!tiktokAccessToken}
                               >
                                 Post to TikTok
                               </Button>
