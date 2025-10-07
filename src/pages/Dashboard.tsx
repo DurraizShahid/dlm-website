@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +7,7 @@ import { translations } from '@/i18n/translations';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import UserDashboard from '@/components/UserDashboard';
+import { useLocation } from 'react-router-dom';
 
 interface Application {
   id: string;
@@ -14,9 +15,10 @@ interface Application {
   email: string;
   idea_title: string;
   idea_description: string;
-  status: 'pending' | 'under_review' | 'approved' | 'rejected';
+  status: 'pending' | 'under_review' | 'approved' | 'rejected' | 'unpaid' | 'paid';
   created_at: string;
   video_url?: string;
+  payment_screenshot_url?: string;
 }
 
 const Dashboard = () => {
@@ -25,9 +27,57 @@ const Dashboard = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const location = useLocation();
 
   const translate = (key: keyof typeof translations) => {
     return translations[key]?.[language] || translations[key]?.en || key;
+  };
+
+  // Check for email parameter in URL on component mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const emailParam = urlParams.get('email');
+    
+    if (emailParam) {
+      setEmail(decodeURIComponent(emailParam));
+      handleEmailSubmitAutomatically(decodeURIComponent(emailParam));
+    }
+  }, [location]);
+
+  const handleEmailSubmitAutomatically = async (emailAddress: string) => {
+    if (!emailAddress.trim()) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await (supabase as any)
+        .from('application_submissions')
+        .select('*')
+        .eq('email', emailAddress.toLowerCase().trim())
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching applications:', error);
+        toast.error('Error accessing your applications. Please try again.');
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        toast.error('No applications found for this email address.');
+        return;
+      }
+
+      setApplications(data);
+      setIsLoggedIn(true);
+      toast.success(`Found ${data.length} application(s) for ${emailAddress}`);
+
+    } catch (error) {
+      console.error('Dashboard access error:', error);
+      toast.error('Error accessing dashboard. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleEmailSubmit = async (e: React.FormEvent) => {

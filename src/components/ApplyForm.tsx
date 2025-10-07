@@ -184,9 +184,9 @@ const ApplyForm = () => {
       setPendingFormData(null);
       setExistingCnicData(null);
       
-      // Redirect to home page
+      // Redirect to dashboard with email pre-filled
       setTimeout(() => {
-        navigate('/');
+        navigate(`/dashboard?email=${encodeURIComponent(data.email)}`);
       }, 3000);
       
     } catch (error) {
