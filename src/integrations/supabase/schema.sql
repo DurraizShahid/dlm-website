@@ -11,6 +11,7 @@ CREATE TABLE application_submissions (
   idea_title TEXT NOT NULL,
   idea_description TEXT NOT NULL CHECK (length(idea_description) >= 300 AND length(idea_description) <= 500),
   video_url TEXT, -- Stores file path (e.g., 'videos/filename.mp4'), not full URL
+  payment_screenshot_url TEXT, -- Stores file path for payment screenshot
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'under_review', 'approved', 'rejected', 'unpaid', 'paid')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL

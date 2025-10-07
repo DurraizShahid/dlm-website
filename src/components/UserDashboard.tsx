@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { translations } from '@/i18n/translations';
 import { supabase } from '@/integrations/supabase/client';
-import { generateVideoSignedUrl } from '@/utils/videoUtils';
+import { generateVideoSignedUrl, generateScreenshotSignedUrl } from '@/utils/videoUtils';
 import { 
   FileText, 
   Video, 
@@ -24,7 +24,9 @@ import {
   Lock,
   AlertCircle,
   MessageCircle,
-  Upload
+  Upload,
+  Image as ImageIcon,
+  Check
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -36,7 +38,8 @@ interface Application {
   idea_description: string;
   status: 'pending' | 'under_review' | 'approved' | 'rejected' | 'unpaid' | 'paid';
   created_at: string;
-  video_url?: string; // This is now a file path, not a full URL
+  video_url?: string;
+  payment_screenshot_url?: string;
 }
 
 interface UserDashboardProps {
@@ -48,6 +51,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
   const { language } = useLanguage();
   const [applications, setApplications] = useState<Application[]>(propApplications || []);
   const [loadingData, setLoadingData] = useState(false);
+  const [uploadingScreenshotId, setUploadingScreenshotId] = useState<string | null>(null);
 
   const translate = (key: keyof typeof translations) => {
     return translations[key]?.[language] || translations[key]?.en || key;
@@ -117,6 +121,84 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
       toast.error('Error opening video.');
     }
   }, []);
+
+  // Function to view payment screenshot
+  const viewPaymentScreenshot = useCallback(async (filePath: string) => {
+    try {
+      const signedUrl = await generateScreenshotSignedUrl(filePath);
+      if (signedUrl) {
+        window.open(signedUrl, '_blank');
+      } else {
+        toast.error('Error loading screenshot');
+      }
+    } catch (error) {
+      console.error('Error opening screenshot:', error);
+      toast.error('Error opening screenshot');
+    }
+  }, []);
+
+  // Function to upload payment screenshot
+  const uploadPaymentScreenshot = useCallback(async (applicationId: string, file: File) => {
+    try {
+      setUploadingScreenshotId(applicationId);
+      toast.info('Uploading payment screenshot...');
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `screenshots/${fileName}`;
+
+      const { error: uploadError } = await (supabase as any).storage
+        .from('application-videos')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error('Screenshot upload error:', uploadError);
+        toast.error('Error uploading payment screenshot');
+        return false;
+      }
+
+      // Update the application record with the screenshot URL
+      const { error: updateError } = await (supabase as any)
+        .from('application_submissions')
+        .update({ payment_screenshot_url: filePath })
+        .eq('id', applicationId);
+
+      if (updateError) {
+        console.error('Error updating application with screenshot URL:', updateError);
+        toast.error('Error saving screenshot information');
+        return false;
+      }
+
+      // Update local state
+      setApplications(prev => 
+        prev.map(app => 
+          app.id === applicationId 
+            ? { ...app, payment_screenshot_url: filePath } 
+            : app
+        )
+      );
+
+      console.log('Screenshot uploaded successfully to path:', filePath);
+      toast.success('Payment screenshot uploaded successfully');
+      return true;
+    } catch (error) {
+      console.error('Screenshot upload error:', error);
+      toast.error('Error uploading payment screenshot');
+      return false;
+    } finally {
+      setUploadingScreenshotId(null);
+    }
+  }, []);
+
+  // Handle screenshot file selection
+  const handleScreenshotUpload = useCallback((applicationId: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      uploadPaymentScreenshot(applicationId, file);
+      // Reset the file input
+      event.target.value = '';
+    }
+  }, [uploadPaymentScreenshot]);
 
   // Use provided applications or fetch if needed
   useEffect(() => {
@@ -408,6 +490,85 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
                             <PlayCircle className="h-3 w-3 mr-1" />
                             View Video
                           </Button>
+                        </div>
+                      )}
+
+                      {/* Payment Screenshot Section for Unpaid Applications */}
+                      {app.status === 'unpaid' && (
+                        <div className="pt-2 border-t border-gray-100">
+                          <h4 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">Payment Screenshot</h4>
+                          {app.payment_screenshot_url ? (
+                            <div className="flex items-center justify-between bg-green-50 p-3 rounded-lg">
+                              <div className="flex items-center space-x-2">
+                                <Check className="h-4 w-4 text-green-600" />
+                                <span className="text-xs sm:text-sm text-green-700">Screenshot uploaded</span>
+                              </div>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => viewPaymentScreenshot(app.payment_screenshot_url!)}
+                                className="text-xs"
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
+                                View
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleScreenshotUpload(app.id, e)}
+                                disabled={uploadingScreenshotId === app.id}
+                                className="hidden"
+                                id={`screenshot-upload-${app.id}`}
+                              />
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => document.getElementById(`screenshot-upload-${app.id}`)?.click()}
+                                disabled={uploadingScreenshotId === app.id}
+                                className="w-full sm:w-auto text-xs"
+                              >
+                                {uploadingScreenshotId === app.id ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
+                                    Uploading...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Upload className="h-3 w-3 mr-1" />
+                                    Upload Screenshot
+                                  </>
+                                )}
+                              </Button>
+                              <p className="text-xs text-gray-500 sm:text-left">
+                                Upload proof of payment after making the transfer
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Payment Screenshot Section for Paid Applications */}
+                      {app.status === 'paid' && app.payment_screenshot_url && (
+                        <div className="pt-2 border-t border-gray-100">
+                          <h4 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">Payment Screenshot</h4>
+                          <div className="flex items-center justify-between bg-green-50 p-3 rounded-lg">
+                            <div className="flex items-center space-x-2">
+                              <Check className="h-4 w-4 text-green-600" />
+                              <span className="text-xs sm:text-sm text-green-700">Payment confirmed</span>
+                            </div>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => viewPaymentScreenshot(app.payment_screenshot_url!)}
+                              className="text-xs"
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              View Screenshot
+                            </Button>
+                          </div>
                         </div>
                       )}
                     </CardContent>

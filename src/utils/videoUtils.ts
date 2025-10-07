@@ -28,6 +28,33 @@ export const generateVideoSignedUrl = async (
 };
 
 /**
+ * Generate a signed URL for accessing a screenshot file from Supabase Storage
+ * @param filePath - The file path in the storage bucket (e.g., 'screenshots/filename.png')
+ * @param expiresIn - URL expiration time in seconds (default: 3600 = 1 hour)
+ * @returns Promise<string | null> - The signed URL or null if error
+ */
+export const generateScreenshotSignedUrl = async (
+  filePath: string, 
+  expiresIn: number = 3600
+): Promise<string | null> => {
+  try {
+    const { data, error } = await (supabase as any).storage
+      .from('application-videos')
+      .createSignedUrl(filePath, expiresIn);
+
+    if (error) {
+      console.error('Error creating signed URL for screenshot:', error);
+      return null;
+    }
+
+    return data.signedUrl;
+  } catch (error) {
+    console.error('Error generating signed URL for screenshot:', error);
+    return null;
+  }
+};
+
+/**
  * Check if a video URL is accessible
  * @param filePath - The file path in the storage bucket
  * @returns Promise<boolean> - True if video exists and is accessible

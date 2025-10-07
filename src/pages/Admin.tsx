@@ -25,7 +25,8 @@ import {
   XCircle,
   PlayCircle,
   LogOut,
-  Download
+  Download,
+  Image as ImageIcon
 } from 'lucide-react';
 
 interface Application {
@@ -38,6 +39,7 @@ interface Application {
   idea_title: string;
   idea_description: string;
   video_url?: string;
+  payment_screenshot_url?: string; // Add screenshot URL field
   status: 'pending' | 'under_review' | 'approved' | 'rejected' | 'unpaid' | 'paid';
   created_at: string;
 }
@@ -119,6 +121,26 @@ const Admin = () => {
     } catch (error) {
       console.error('Error opening video:', error);
       toast.error('Error opening video');
+    }
+  };
+
+  // Function to view payment screenshot
+  const viewPaymentScreenshot = async (filePath: string) => {
+    try {
+      const { data, error } = await (supabase as any).storage
+        .from('application-videos')
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
+
+      if (error) {
+        console.error('Error creating signed URL for screenshot:', error);
+        toast.error('Error loading screenshot');
+        return;
+      }
+
+      window.open(data.signedUrl, '_blank');
+    } catch (error) {
+      console.error('Error opening screenshot:', error);
+      toast.error('Error opening screenshot');
     }
   };
 
@@ -465,137 +487,154 @@ ${application.idea_description}
         </div>
 
         {/* Applications Table */}
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <div>
-                <CardTitle className="flex items-center space-x-2">
-                  <FileText className="h-5 w-5" />
-                  <span>All Applications</span>
-                </CardTitle>
-                <CardDescription>
-                  Review and manage all submitted applications
-                </CardDescription>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="flex items-center space-x-2">
+                    <FileText className="h-5 w-5" />
+                    <span>All Applications</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Review and manage all submitted applications
+                  </CardDescription>
+                </div>
+                <Button onClick={fetchApplications} disabled={loading} size="sm">
+                  {loading ? 'Loading...' : 'Refresh'}
+                </Button>
               </div>
-              <Button onClick={fetchApplications} disabled={loading} size="sm">
-                {loading ? 'Loading...' : 'Refresh'}
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800 mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading applications...</p>
-              </div>
-            ) : applications.length === 0 ? (
-              <div className="text-center py-8">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">No applications found</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Age</TableHead>
-                      <TableHead>CNIC</TableHead>
-                      <TableHead>Idea Title</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Video</TableHead>
-                      <TableHead>Submitted</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {applications.map((app) => (
-                      <TableRow key={app.id}>
-                        <TableCell className="font-medium">{app.full_name}</TableCell>
-                        <TableCell>{app.email}</TableCell>
-                        <TableCell>{app.age}</TableCell>
-                        <TableCell className="font-mono text-sm">{app.cnic}</TableCell>
-                        <TableCell>
-                          <div className="max-w-xs truncate" title={app.idea_title}>
-                            {app.idea_title}
-                          </div>
-                        </TableCell>
-                        <TableCell>{getStatusBadge(app.status)}</TableCell>
-                        <TableCell>
-                          {app.video_url ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewVideo(app.video_url!)}
-                            >
-                              <PlayCircle className="h-3 w-3 mr-1" />
-                              View
-                            </Button>
-                          ) : (
-                            <span className="text-gray-400 text-sm">No video</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-sm text-gray-600">
-                          {new Date(app.created_at).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-1 flex-wrap gap-1">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                console.log('Approve button clicked for app:', app.id);
-                                updateApplicationStatus(app.id, 'approved');
-                              }}
-                              disabled={app.status === 'approved'}
-                              className="text-green-600 hover:text-green-700"
-                            >
-                              Approve
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                console.log('Reject button clicked for app:', app.id);
-                                updateApplicationStatus(app.id, 'rejected');
-                              }}
-                              disabled={app.status === 'rejected'}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              Reject
-                            </Button>
-                            {app.status === 'unpaid' && (
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading applications...</p>
+                </div>
+              ) : applications.length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">No applications found</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Age</TableHead>
+                        <TableHead>CNIC</TableHead>
+                        <TableHead>Idea Title</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Video</TableHead>
+                        <TableHead>Screenshot</TableHead> {/* Add Screenshot column */}
+                        <TableHead>Submitted</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {applications.map((app) => (
+                        <TableRow key={app.id}>
+                          <TableCell className="font-medium">{app.full_name}</TableCell>
+                          <TableCell>{app.email}</TableCell>
+                          <TableCell>{app.age}</TableCell>
+                          <TableCell className="font-mono text-sm">{app.cnic}</TableCell>
+                          <TableCell>
+                            <div className="max-w-xs truncate" title={app.idea_title}>
+                              {app.idea_title}
+                            </div>
+                          </TableCell>
+                          <TableCell>{getStatusBadge(app.status)}</TableCell>
+                          <TableCell>
+                            {app.video_url ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewVideo(app.video_url!)}
+                              >
+                                <PlayCircle className="h-3 w-3 mr-1" />
+                                View
+                              </Button>
+                            ) : (
+                              <span className="text-gray-400 text-sm">No video</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {app.payment_screenshot_url ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => viewPaymentScreenshot(app.payment_screenshot_url!)}
+                              >
+                                <ImageIcon className="h-3 w-3 mr-1" />
+                                View
+                              </Button>
+                            ) : (
+                              <span className="text-gray-400 text-sm">No screenshot</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-sm text-gray-600">
+                            {new Date(app.created_at).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-1 flex-wrap gap-1">
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => {
-                                  console.log('Mark as Paid button clicked for app:', app.id);
-                                  updateApplicationStatus(app.id, 'paid');
+                                  console.log('Approve button clicked for app:', app.id);
+                                  updateApplicationStatus(app.id, 'approved');
                                 }}
+                                disabled={app.status === 'approved'}
+                                className="text-green-600 hover:text-green-700"
+                              >
+                                Approve
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  console.log('Reject button clicked for app:', app.id);
+                                  updateApplicationStatus(app.id, 'rejected');
+                                }}
+                                disabled={app.status === 'rejected'}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                Reject
+                              </Button>
+                              {app.status === 'unpaid' && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    console.log('Mark as Paid button clicked for app:', app.id);
+                                    updateApplicationStatus(app.id, 'paid');
+                                  }}
+                                  className="text-purple-600 hover:text-purple-700"
+                                >
+                                  Mark as Paid
+                                </Button>
+                              )}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handlePostToTikTok(app)}
                                 className="text-purple-600 hover:text-purple-700"
                               >
-                                Mark as Paid
+                                Post to TikTok
                               </Button>
-                            )}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handlePostToTikTok(app)}
-                              className="text-purple-600 hover:text-purple-700"
-                            >
-                              Post to TikTok
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
