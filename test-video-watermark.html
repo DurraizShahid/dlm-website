@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Video Watermark Function</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-container { max-width: 800px; margin: 0 auto; }
+        button { padding: 10px 20px; margin: 10px 0; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        .result { margin: 20px 0; padding: 15px; border-radius: 4px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        input { padding: 8px; width: 300px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Test Video Watermark Function</h1>
+        
+        <div>
+            <label for="videoPath">Video Path:</label><br>
+            <input type="text" id="videoPath" placeholder="Enter video path (e.g., videos/sample.mp4)" value="videos/sample.mp4">
+            <br>
+            <button id="testButton">Test Function</button>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        document.getElementById('testButton').addEventListener('click', async () => {
+            const videoPath = document.getElementById('videoPath').value;
+            const resultDiv = document.getElementById('result');
+            
+            if (!videoPath) {
+                showResult('Please enter a video path', 'error');
+                return;
+            }
+            
+            try {
+                resultDiv.innerHTML = '<p>Testing function...</p>';
+                
+                const response = await fetch('/functions/v1/video-watermark', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ videoPath })
+                });
+                
+                const responseText = await response.text();
+                
+                if (!response.ok) {
+                    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    try {
+                        const errorData = JSON.parse(responseText);
+                        errorMessage = errorData.error || errorData.message || errorMessage;
+                    } catch (e) {
+                        // If it's not JSON, use the raw text
+                        errorMessage = responseText || errorMessage;
+                    }
+                    throw new Error(errorMessage);
+                }
+                
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (parseError) {
+                    throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}...`);
+                }
+                
+                showResult(`
+                    <h3>Success!</h3>
+                    <p><strong>Message:</strong> ${data.message}</p>
+                    <p><strong>Original Path:</strong> ${data.originalPath}</p>
+                    <p><strong>Watermarked Path:</strong> ${data.watermarkedPath}</p>
+                    <p><strong>Watermarked Filename:</strong> ${data.watermarkedFileName}</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `, 'success');
+            } catch (error) {
+                console.error('Error:', error);
+                showResult(`<h3>Error:</h3><p>${error.message}</p>`, 'error');
+            }
+        });
+        
+        function showResult(html, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = html;
+            resultDiv.className = `result ${type}`;
+        }
+    </script>
+</body>
+</html>

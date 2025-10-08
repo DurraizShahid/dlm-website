@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Client-Side Watermarking</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        button { padding: 10px 20px; margin: 10px 5px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        input, select { padding: 8px; width: 300px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; }
+        .result { margin: 20px 0; padding: 15px; border-radius: 4px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        .warning { background-color: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+        pre { background-color: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        video { max-width: 100%; margin: 10px 0; }
+        canvas { max-width: 100%; margin: 10px 0; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Client-Side Watermarking</h1>
+        
+        <div class="warning">
+            <h3>⚠️ Important Notice</h3>
+            <p>Client-side video watermarking is extremely resource-intensive and may not work with large videos. This is a demonstration only.</p>
+        </div>
+        
+        <div>
+            <label for="videoUrl">Video URL:</label><br>
+            <input type="text" id="videoUrl" placeholder="Enter video URL" value="" style="width: 100%;">
+            <br>
+            
+            <label for="watermarkUrl">Watermark Image URL:</label><br>
+            <input type="text" id="watermarkUrl" placeholder="Enter watermark image URL" value="/logo.png" style="width: 100%;">
+            <br>
+            
+            <br>
+            <button id="testButton">Test Watermarking</button>
+            <button id="clearButton">Clear Results</button>
+        </div>
+        
+        <div id="result"></div>
+        
+        <div>
+            <h3>Preview:</h3>
+            <video id="videoPreview" controls style="display: none;"></video>
+            <canvas id="canvasPreview" style="display: none;"></canvas>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('testButton').addEventListener('click', async () => {
+            const videoUrl = document.getElementById('videoUrl').value;
+            const watermarkUrl = document.getElementById('watermarkUrl').value;
+            const resultDiv = document.getElementById('result');
+            
+            if (!videoUrl) {
+                showResult('Please enter a video URL', 'error');
+                return;
+            }
+            
+            try {
+                resultDiv.innerHTML = `<div class="result info"><p>Testing client-side watermarking with video: ${videoUrl}</p></div>`;
+                
+                // This is a conceptual demonstration
+                // Actual implementation would be much more complex
+                showResult(`
+                    <h3>Client-Side Watermarking Concept</h3>
+                    <p><strong>Video URL:</strong> ${videoUrl}</p>
+                    <p><strong>Watermark URL:</strong> ${watermarkUrl}</p>
+                    
+                    <div class="warning">
+                        <h4>⚠️ Conceptual Implementation</h4>
+                        <p>This demonstration shows the concept of client-side video watermarking:</p>
+                        <ol>
+                            <li>Load video into HTML5 video element</li>
+                            <li>Process each frame using Canvas API</li>
+                            <li>Overlay watermark on each frame</li>
+                            <li>Reconstruct video using MediaRecorder API</li>
+                        </ol>
+                        <p><strong>Important:</strong> Actual implementation is extremely resource-intensive and may not work with large videos.</p>
+                    </div>
+                    
+                    <h4>Limitations:</h4>
+                    <ul>
+                        <li>Very slow processing for large videos</li>
+                        <li>High memory usage</li>
+                        <li>May crash browser tab</li>
+                        <li>Limited browser support</li>
+                        <li>Output format limited to WebM</li>
+                    </ul>
+                `, 'info');
+            } catch (error) {
+                console.error('Error:', error);
+                showResult(`
+                    <h3>Error:</h3>
+                    <p>${error.message}</p>
+                `, 'error');
+            }
+        });
+        
+        document.getElementById('clearButton').addEventListener('click', () => {
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('videoPreview').style.display = 'none';
+            document.getElementById('canvasPreview').style.display = 'none';
+        });
+        
+        function showResult(html, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = html;
+            resultDiv.className = `result ${type}`;
+        }
+    </script>
+</body>
+</html>

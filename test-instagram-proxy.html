@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Instagram Proxy</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Instagram Proxy</h1>
+    
+    <div class="test-section">
+        <h2>Instagram Proxy Test</h2>
+        <p>This page tests the Instagram API proxy function deployed on Supabase.</p>
+        
+        <button id="testConnection">Test Instagram Proxy Connection</button>
+        <button id="testUserInfo">Test User Info Endpoint</button>
+        <button id="testAccounts">Test Accounts Endpoint</button>
+        
+        <div id="result" style="margin-top: 20px;"></div>
+    </div>
+
+    <script>
+        // Replace with your actual Supabase project URL
+        const proxyUrl = 'https://extalgkjlveevbkcpkuz.supabase.co/functions/v1/instagram-proxy';
+        
+        // Replace with a valid access token for testing (or leave empty to see error handling)
+        const accessToken = '';
+        
+        document.getElementById('testConnection').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Testing Instagram proxy connection...</p>';
+            
+            try {
+                const response = await fetch(proxyUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        method: 'GET',
+                        endpoint: '/me'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <h3 class="success">✅ Instagram Proxy Connection Successful</h3>
+                        <p>Status: ${response.status}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <h3 class="error">❌ Instagram Proxy Connection Failed</h3>
+                        <p>Status: ${response.status}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3 class="error">❌ Instagram Proxy Connection Error</h3>
+                    <p>${error.message}</p>
+                    <pre>${error.stack}</pre>
+                `;
+                console.error('Instagram proxy test error:', error);
+            }
+        });
+        
+        document.getElementById('testUserInfo').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Testing Instagram user info endpoint...</p>';
+            
+            if (!accessToken) {
+                resultDiv.innerHTML = '<p class="error">Please provide a valid access token in the script</p>';
+                return;
+            }
+            
+            try {
+                const response = await fetch(proxyUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        method: 'GET',
+                        endpoint: '/me',
+                        headers: {
+                            'Authorization': `Bearer ${accessToken}`
+                        }
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <h3 class="success">✅ Instagram User Info Request Successful</h3>
+                        <p>Status: ${response.status}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <h3 class="error">❌ Instagram User Info Request Failed</h3>
+                        <p>Status: ${response.status}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3 class="error">❌ Instagram User Info Request Error</h3>
+                    <p>${error.message}</p>
+                    <pre>${error.stack}</pre>
+                `;
+                console.error('Instagram user info test error:', error);
+            }
+        });
+        
+        document.getElementById('testAccounts').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Testing Instagram accounts endpoint...</p>';
+            
+            if (!accessToken) {
+                resultDiv.innerHTML = '<p class="error">Please provide a valid access token in the script</p>';
+                return;
+            }
+            
+            try {
+                const response = await fetch(proxyUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        method: 'GET',
+                        endpoint: '/me/accounts',
+                        headers: {
+                            'Authorization': `Bearer ${accessToken}`
+                        }
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <h3 class="success">✅ Instagram Accounts Request Successful</h3>
+                        <p>Status: ${response.status}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <h3 class="error">❌ Instagram Accounts Request Failed</h3>
+                        <p>Status: ${response.status}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3 class="error">❌ Instagram Accounts Request Error</h3>
+                    <p>${error.message}</p>
+                    <pre>${error.stack}</pre>
+                `;
+                console.error('Instagram accounts test error:', error);
+            }
+        });
+    </script>
+</body>
+</html>

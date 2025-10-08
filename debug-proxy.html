@@ -1,26 +1,35 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Debug TikTok Proxy</title>
+    <title>Debug TikTok & Instagram Proxy</title>
 </head>
 <body>
-    <h1>Debug TikTok Proxy</h1>
-    <button id="testProxy">Test Proxy Connection</button>
-    <button id="testDirect">Test Direct Connection (Should Fail)</button>
+    <h1>Debug TikTok & Instagram Proxy</h1>
+    
+    <h2>TikTok Proxy Testing</h2>
+    <button id="testTikTokProxy">Test TikTok Proxy Connection</button>
+    <button id="testTikTokDirect">Test TikTok Direct Connection (Should Fail)</button>
+    
+    <h2>Instagram Proxy Testing</h2>
+    <button id="testInstagramProxy">Test Instagram Proxy Connection</button>
+    <button id="testInstagramDirect">Test Instagram Direct Connection (Should Fail)</button>
+    
     <div id="result" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc;"></div>
 
     <script>
-        const proxyUrl = 'https://extalgkjlveevbkcpkuz.supabase.co/functions/v1/tiktok-proxy';
+        const tiktokProxyUrl = 'https://extalgkjlveevbkcpkuz.supabase.co/functions/v1/tiktok-proxy';
+        const instagramProxyUrl = 'https://extalgkjlveevbkcpkuz.supabase.co/functions/v1/instagram-proxy';
         const tiktokUrl = 'https://open.tiktokapis.com/v2/user/info/';
+        const instagramUrl = 'https://graph.instagram.com/me/accounts';
         
-        document.getElementById('testProxy').addEventListener('click', async () => {
+        document.getElementById('testTikTokProxy').addEventListener('click', async () => {
             const resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = '<p>Testing proxy connection...</p>';
+            resultDiv.innerHTML = '<p>Testing TikTok proxy connection...</p>';
             
             try {
-                console.log('Testing proxy URL:', proxyUrl);
+                console.log('Testing TikTok proxy URL:', tiktokProxyUrl);
                 
-                const response = await fetch(proxyUrl, {
+                const response = await fetch(tiktokProxyUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -31,31 +40,31 @@
                     })
                 });
                 
-                console.log('Proxy response status:', response.status);
-                console.log('Proxy response headers:', [...response.headers.entries()]);
+                console.log('TikTok proxy response status:', response.status);
+                console.log('TikTok proxy response headers:', [...response.headers.entries()]);
                 
                 const data = await response.json();
                 resultDiv.innerHTML = `
-                    <h3>Proxy Test Result</h3>
+                    <h3>TikTok Proxy Test Result</h3>
                     <p>Status: ${response.status}</p>
                     <pre>${JSON.stringify(data, null, 2)}</pre>
                 `;
             } catch (error) {
                 resultDiv.innerHTML = `
-                    <h3 style="color: red;">Proxy Test Error</h3>
+                    <h3 style="color: red;">TikTok Proxy Test Error</h3>
                     <p style="color: red;">${error.message}</p>
                     <pre>${error.stack}</pre>
                 `;
-                console.error('Proxy test error:', error);
+                console.error('TikTok proxy test error:', error);
             }
         });
         
-        document.getElementById('testDirect').addEventListener('click', async () => {
+        document.getElementById('testTikTokDirect').addEventListener('click', async () => {
             const resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = '<p>Testing direct connection (should fail with CORS error)...</p>';
+            resultDiv.innerHTML = '<p>Testing TikTok direct connection (should fail with CORS error)...</p>';
             
             try {
-                console.log('Testing direct URL:', tiktokUrl);
+                console.log('Testing TikTok direct URL:', tiktokUrl);
                 
                 const response = await fetch(tiktokUrl, {
                     method: 'GET',
@@ -66,19 +75,84 @@
                 
                 const data = await response.json();
                 resultDiv.innerHTML = `
-                    <h3>Direct Test Result</h3>
+                    <h3>TikTok Direct Test Result</h3>
                     <p>Status: ${response.status}</p>
                     <pre>${JSON.stringify(data, null, 2)}</pre>
                 `;
             } catch (error) {
                 resultDiv.innerHTML = `
-                    <h3 style="color: red;">Direct Test Error (Expected)</h3>
+                    <h3 style="color: red;">TikTok Direct Test Error (Expected)</h3>
                     <p style="color: red;">${error.message}</p>
                 `;
-                console.error('Direct test error (expected):', error);
+                console.error('TikTok direct test error (expected):', error);
+            }
+        });
+        
+        document.getElementById('testInstagramProxy').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Testing Instagram proxy connection...</p>';
+            
+            try {
+                console.log('Testing Instagram proxy URL:', instagramProxyUrl);
+                
+                const response = await fetch(instagramProxyUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        method: 'GET',
+                        endpoint: '/me/accounts'
+                    })
+                });
+                
+                console.log('Instagram proxy response status:', response.status);
+                console.log('Instagram proxy response headers:', [...response.headers.entries()]);
+                
+                const data = await response.json();
+                resultDiv.innerHTML = `
+                    <h3>Instagram Proxy Test Result</h3>
+                    <p>Status: ${response.status}</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3 style="color: red;">Instagram Proxy Test Error</h3>
+                    <p style="color: red;">${error.message}</p>
+                    <pre>${error.stack}</pre>
+                `;
+                console.error('Instagram proxy test error:', error);
+            }
+        });
+        
+        document.getElementById('testInstagramDirect').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Testing Instagram direct connection (should fail with CORS error)...</p>';
+            
+            try {
+                console.log('Testing Instagram direct URL:', instagramUrl);
+                
+                const response = await fetch(instagramUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                resultDiv.innerHTML = `
+                    <h3>Instagram Direct Test Result</h3>
+                    <p>Status: ${response.status}</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3 style="color: red;">Instagram Direct Test Error (Expected)</h3>
+                    <p style="color: red;">${error.message}</p>
+                `;
+                console.error('Instagram direct test error (expected):', error);
             }
         });
     </script>
-</body>
 </body>
 </html>

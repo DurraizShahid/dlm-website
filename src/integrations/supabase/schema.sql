@@ -5,7 +5,7 @@ CREATE TABLE application_submissions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   full_name TEXT NOT NULL,
   email TEXT NOT NULL,
-  age INTEGER NOT NULL CHECK (age >= 18 AND age <= 100),
+  age INTEGER NOT NULL CHECK (age >= 0 AND age <= 100),
   address TEXT NOT NULL,
   cnic TEXT NOT NULL CHECK (cnic ~ '^\d{5}-\d{7}-\d{1}$'),
   idea_title TEXT NOT NULL,

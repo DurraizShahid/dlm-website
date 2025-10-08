@@ -15,6 +15,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { generateVideoSignedUrl } from '@/utils/videoUtils';
 import { refreshTikTokAccessToken, postVideoToTikTok, generateTikTokOAuthUrl, exchangeCodeForAccessToken, getTikTokUserInfo, testTikTokConnection } from '@/utils/tiktokUtils';
+import { generateInstagramOAuthUrl, postVideoToInstagram, getInstagramAccounts, exchangeCodeForAccessToken as exchangeInstagramCodeForAccessToken, getInstagramUserInfo, testInstagramConnection } from '@/utils/instagramUtils';
 import { toast } from 'sonner';
 import { 
   Shield, 
@@ -55,6 +56,9 @@ const Admin = () => {
   const [loginError, setLoginError] = useState('');
   const [tiktokUser, setTiktokUser] = useState<any>(null);
   const [tiktokAccessToken, setTiktokAccessToken] = useState<string | null>(null);
+  const [instagramUser, setInstagramUser] = useState<any>(null);
+  const [instagramAccessToken, setInstagramAccessToken] = useState<string | null>(null);
+  const [instagramAccounts, setInstagramAccounts] = useState<any[]>([]);
 
   // Check if already authenticated (from session storage)
   useEffect(() => {
@@ -66,6 +70,8 @@ const Admin = () => {
     
     // Check for TikTok OAuth callback
     handleTikTokCallback();
+    // Check for Instagram OAuth callback
+    handleInstagramCallback();
   }, []);
 
   // Handle TikTok OAuth callback
@@ -130,6 +136,84 @@ const Admin = () => {
     }
   };
 
+  // Handle Instagram OAuth callback
+  const handleInstagramCallback = async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const state = urlParams.get('state');
+    const error = urlParams.get('error');
+    
+    // Check if this is an Instagram callback (different from TikTok)
+    if (window.location.search.includes('instagram_callback')) {
+      if (error) {
+        toast.error(`Instagram OAuth error: ${error}`);
+        return;
+      }
+      
+      if (code && state) {
+        // Verify state parameter to prevent CSRF attacks
+        const storedState = sessionStorage.getItem('instagram_oauth_state');
+        if (state !== storedState) {
+          toast.error('Invalid Instagram OAuth state parameter');
+          return;
+        }
+        
+        try {
+          // Exchange code for access token
+          const tokenData = await exchangeInstagramCodeForAccessToken(code);
+          setInstagramAccessToken(tokenData.access_token);
+          
+          // Store tokens in sessionStorage
+          sessionStorage.setItem('instagram_access_token', tokenData.access_token);
+          if (tokenData.expires_in) {
+            sessionStorage.setItem('instagram_token_expires_at', 
+              (Date.now() + (tokenData.expires_in * 1000)).toString());
+          }
+          
+          // Get Instagram accounts
+          const accounts = await getInstagramAccounts(tokenData.access_token);
+          if (accounts && accounts.length > 0) {
+            setInstagramAccounts(accounts);
+            // Use the first account by default
+            const firstAccount = accounts[0];
+            setInstagramUser(firstAccount);
+            
+            // Get user info for the account
+            const userInfo = await getInstagramUserInfo(tokenData.access_token, firstAccount.id);
+            console.log('Instagram user info:', userInfo);
+          }
+          
+          toast.success('Successfully connected to Instagram!');
+          
+          // Remove OAuth parameters from URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } catch (error) {
+          console.error('Error handling Instagram callback:', error);
+          toast.error('Failed to connect to Instagram');
+        }
+      } else {
+        // Check if we have stored tokens
+        const storedAccessToken = sessionStorage.getItem('instagram_access_token');
+        const tokenExpiry = sessionStorage.getItem('instagram_token_expires_at');
+        
+        if (storedAccessToken && tokenExpiry && Date.now() < parseInt(tokenExpiry)) {
+          setInstagramAccessToken(storedAccessToken);
+          
+          // Get Instagram accounts
+          try {
+            const accounts = await getInstagramAccounts(storedAccessToken);
+            if (accounts && accounts.length > 0) {
+              setInstagramAccounts(accounts);
+              setInstagramUser(accounts[0]);
+            }
+          } catch (error) {
+            console.error('Error getting Instagram accounts:', error);
+          }
+        }
+      }
+    }
+  };
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
@@ -161,6 +245,12 @@ const Admin = () => {
     window.location.href = oauthUrl;
   };
 
+  const handleInstagramLogin = () => {
+    // Generate OAuth URL and redirect user
+    const oauthUrl = generateInstagramOAuthUrl();
+    window.location.href = oauthUrl;
+  };
+
   const handleTikTokLogout = () => {
     setTiktokUser(null);
     setTiktokAccessToken(null);
@@ -169,6 +259,16 @@ const Admin = () => {
     sessionStorage.removeItem('tiktok_token_expires_at');
     sessionStorage.removeItem('tiktok_oauth_state');
     toast.info('Disconnected from TikTok');
+  };
+
+  const handleInstagramLogout = () => {
+    setInstagramUser(null);
+    setInstagramAccessToken(null);
+    setInstagramAccounts([]);
+    sessionStorage.removeItem('instagram_access_token');
+    sessionStorage.removeItem('instagram_token_expires_at');
+    sessionStorage.removeItem('instagram_oauth_state');
+    toast.info('Disconnected from Instagram');
   };
 
   const fetchApplications = async () => {
@@ -351,6 +451,337 @@ ${application.idea_description}
     }
   };
 
+  const handlePostToInstagram = async (application: Application) => {
+    try {
+      toast.info(`Preparing to post "${application.idea_title}" to Instagram...`);
+      
+      // Check if the application has a video
+      if (!application.video_url) {
+        toast.error('No video found for this application');
+        return;
+      }
+      
+      // Check if we have an Instagram access token
+      let accessToken = instagramAccessToken || sessionStorage.getItem('instagram_access_token');
+      
+      if (!accessToken) {
+        toast.error('Please connect your Instagram account first');
+        return;
+      }
+      
+      // Check if we have Instagram accounts
+      if (!instagramUser) {
+        toast.error('No Instagram account found. Please connect your Instagram account.');
+        return;
+      }
+      
+      // Log token info for debugging (don't log the full token for security)
+      console.log('Using Instagram access token (first 10 chars):', accessToken.substring(0, 10));
+      console.log('Token length:', accessToken.length);
+      console.log('Using Instagram account:', instagramUser);
+      
+      // Generate a signed URL for the video that Instagram can access
+      toast.info('Generating signed URL for video...');
+      const videoSignedUrl = await generateVideoSignedUrl(application.video_url, 7200); // 2 hour expiry
+      
+      if (!videoSignedUrl) {
+        toast.error('Failed to generate video access URL');
+        return;
+      }
+      
+      // Log the video URL for debugging
+      console.log('Posting video with signed URL:', videoSignedUrl);
+      
+      // Test if the URL is accessible
+      toast.info('Testing video URL accessibility...');
+      try {
+        const urlTestResponse = await fetch(videoSignedUrl, { method: 'HEAD' });
+        console.log('Video URL test response status:', urlTestResponse.status);
+        if (!urlTestResponse.ok) {
+          toast.error(`Video URL not accessible: ${urlTestResponse.status} - ${urlTestResponse.statusText}`);
+          return;
+        }
+      } catch (urlError) {
+        console.error('Error testing video URL:', urlError);
+        toast.error('Error testing video URL accessibility');
+        return;
+      }
+      
+      // Create caption with idea title, description and hashtags
+      const caption = `${application.idea_title}
+
+${application.idea_description}
+
+#DreamLauncherMovement #Innovation #Pakistan #Entrepreneurship #Startup`;
+      
+      // Post video to Instagram
+      toast.info('Posting video to Instagram...');
+      const mediaId = await postVideoToInstagram(
+        videoSignedUrl,
+        caption,
+        instagramUser.id,
+        accessToken
+      );
+      
+      if (mediaId) {
+        toast.success(`Successfully posted "${application.idea_title}" to Instagram!`);
+      } else {
+        toast.error('Failed to post video to Instagram');
+      }
+    } catch (error: any) {
+      console.error('Error posting to Instagram:', error);
+      
+      // Provide more detailed error information
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        toast.error('Network error: Unable to connect to Instagram API. This may be due to CORS restrictions, network connectivity issues, or an invalid access token.');
+      } else if (error.message) {
+        toast.error(`Error posting to Instagram: ${error.message}`);
+      } else {
+        toast.error('Unknown error occurred while posting to Instagram');
+      }
+    }
+  };
+
+  // New function to handle downloading video with watermark
+  const handleDownloadWithWatermark = async (application: Application) => {
+    try {
+      toast.info(`Preparing to download "${application.idea_title}" with watermark...`);
+      
+      // Check if the application has a video
+      if (!application.video_url) {
+        toast.error('No video found for this application');
+        return;
+      }
+      
+      console.log('Application video URL:', application.video_url);
+      
+      // Generate a signed URL for the original video
+      const signedUrl = await generateVideoSignedUrl(application.video_url, 3600); // 1 hour expiry
+      
+      if (!signedUrl) {
+        toast.error('Failed to generate download link for video');
+        return;
+      }
+      
+      toast.info('Downloading video for watermarking...');
+      
+      // Fetch the video as a blob
+      const response = await fetch(signedUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to download video: ${response.status} ${response.statusText}`);
+      }
+      
+      const videoBlob = await response.blob();
+      const videoFileName = application.video_url.split('/').pop() || 'video.mp4';
+      const fileNameWithoutExt = videoFileName.split('.')[0];
+      const fileExt = videoFileName.split('.').pop() || 'mp4';
+      const watermarkedFileName = `${fileNameWithoutExt}_watermarked.${fileExt}`;
+      
+      // Attempt client-side watermarking
+      toast.info('Adding watermark to video (this may take a moment)...');
+      
+      try {
+        const watermarkedBlob = await addWatermarkToVideoClientSide(videoBlob, signedUrl);
+        
+        // Create a temporary link to trigger download
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(watermarkedBlob);
+        link.download = watermarkedFileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up the object URL
+        URL.revokeObjectURL(link.href);
+        
+        toast.success(`Successfully downloaded "${application.idea_title}" with watermark!`);
+      } catch (processingError: any) {
+        console.warn('Client-side watermarking failed:', processingError);
+        
+        // Fallback to just downloading the original with watermark filename
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(videoBlob);
+        link.download = watermarkedFileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up the object URL
+        URL.revokeObjectURL(link.href);
+        
+        toast.success(`Downloaded "${application.idea_title}" (watermarking not applied due to processing limitations)`);
+      }
+    } catch (error: any) {
+      console.error('Error downloading video with watermark:', error);
+      toast.error(`Error: ${error.message || 'Failed to download video with watermark'}`);
+    }
+  };
+
+  // Function to add watermark to video client-side
+  const addWatermarkToVideoClientSide = async (videoBlob: Blob, videoUrl: string): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      // Create video element
+      const video = document.createElement('video');
+      video.src = videoUrl;
+      video.muted = true;
+      video.playsInline = true;
+      video.crossOrigin = 'anonymous';
+      
+      // Create canvas for frame processing
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        reject(new Error('Could not get canvas context'));
+        return;
+      }
+      
+      // Load watermark image
+      const watermark = new Image();
+      watermark.crossOrigin = 'Anonymous';
+      watermark.src = '/logo.png';
+      
+      let watermarkLoaded = false;
+      
+      watermark.onload = () => {
+        watermarkLoaded = true;
+        startProcessingIfReady();
+      };
+      
+      const startProcessingIfReady = () => {
+        // Only start processing when both video metadata and watermark are loaded
+        if (video.readyState >= 2 && watermarkLoaded) {
+          // Set canvas dimensions
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          
+          // Create MediaRecorder to capture processed frames
+          const chunks: Blob[] = [];
+          const stream = canvas.captureStream(30); // 30 FPS
+          const mediaRecorder = new MediaRecorder(stream, {
+            mimeType: 'video/webm; codecs=vp9'
+          });
+          
+          // Handle recorded data
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) {
+              chunks.push(e.data);
+            }
+          };
+          
+          // Handle recording stop
+          mediaRecorder.onstop = () => {
+            const watermarkedBlob = new Blob(chunks, { type: 'video/webm' });
+            resolve(watermarkedBlob);
+          };
+          
+          // Handle recording error
+          mediaRecorder.onerror = (e) => {
+            console.error('MediaRecorder error:', e);
+            reject(new Error('Failed to record watermarked video'));
+          };
+          
+          // Start recording
+          mediaRecorder.start();
+          
+          // Process video frames
+          let lastTime = 0;
+          const fps = 30;
+          const frameInterval = 1000 / fps;
+          
+          const processFrame = () => {
+            if (video.paused || video.ended) {
+              mediaRecorder.stop();
+              return;
+            }
+            
+            const currentTime = performance.now();
+            if (currentTime - lastTime >= frameInterval) {
+              // Clear canvas
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              
+              // Draw video frame to canvas FIRST
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              
+              // Add watermark
+              const watermarkWidth = canvas.width * 0.15; // 15% of video width
+              const scale = watermarkWidth / watermark.width;
+              const watermarkHeight = watermark.height * scale;
+              
+              // Position watermark in top-left corner
+              ctx.globalAlpha = 0.7; // Semi-transparent
+              ctx.drawImage(
+                watermark,
+                20, // x position
+                20, // y position
+                watermarkWidth,
+                watermarkHeight
+              );
+              ctx.globalAlpha = 1.0;
+              
+              // Add text watermark
+              ctx.font = '20px Arial';
+              ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+              ctx.fillText('WATERMARKED', 20, canvas.height - 30);
+              
+              lastTime = currentTime;
+            }
+            
+            // Continue processing
+            requestAnimationFrame(processFrame);
+          };
+          
+          // Seek to start and begin processing
+          video.currentTime = 0;
+          
+          // Start video and frame processing
+          const playAndProcess = () => {
+            video.play().then(() => {
+              requestAnimationFrame(processFrame);
+              
+              // Stop after 35 seconds (safety limit)
+              setTimeout(() => {
+                if (mediaRecorder.state !== 'inactive') {
+                  mediaRecorder.stop();
+                }
+              }, 35000);
+            }).catch((error) => {
+              console.error('Error playing video:', error);
+              if (mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+              }
+              reject(new Error('Failed to play video for watermarking'));
+            });
+          };
+          
+          // If video is already loaded enough, start processing
+          if (video.readyState >= 3) {
+            playAndProcess();
+          } else {
+            // Wait for video to be ready
+            video.addEventListener('canplay', playAndProcess, { once: true });
+          }
+        }
+      };
+      
+      // When video metadata is loaded
+      video.addEventListener('loadedmetadata', () => {
+        startProcessingIfReady();
+      });
+      
+      // Handle video load error
+      video.addEventListener('error', (e) => {
+        console.error('Video loading error:', e);
+        reject(new Error('Failed to load video'));
+      });
+      
+      // Handle watermark load error
+      watermark.onerror = () => {
+        reject(new Error('Failed to load watermark image'));
+      };
+    });
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
@@ -476,6 +907,27 @@ ${application.idea_description}
     }
   };
 
+  const testInstagramConnectionHandler = async () => {
+    if (!instagramAccessToken) {
+      toast.error('Please connect your Instagram account first');
+      return;
+    }
+    
+    toast.info('Testing Instagram connection...');
+    
+    try {
+      const isValid = await testInstagramConnection(instagramAccessToken);
+      if (isValid) {
+        toast.success('Instagram connection is working correctly!');
+      } else {
+        toast.error('Instagram connection failed. Please check your access token and network connectivity.');
+      }
+    } catch (error) {
+      console.error('Error testing Instagram connection:', error);
+      toast.error('Error testing Instagram connection');
+    }
+  };
+
   // Login Form
   if (!isAuthenticated) {
     return (
@@ -587,6 +1039,31 @@ ${application.idea_description}
                   Connect TikTok
                 </Button>
               )}
+              {instagramUser ? (
+                <div className="flex items-center space-x-2 bg-pink-100 px-3 py-1 rounded-full">
+                  <span className="text-sm font-medium text-pink-800">
+                    Connected as {instagramUser?.username || 'Instagram User'}
+                  </span>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleInstagramLogout}
+                    className="text-pink-600 border-pink-300 hover:bg-pink-50"
+                  >
+                    Disconnect
+                  </Button>
+                </div>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleInstagramLogin}
+                  className="text-pink-600 border-pink-300 hover:bg-pink-50"
+                >
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Connect Instagram
+                </Button>
+              )}
               {tiktokAccessToken && (
                 <Button 
                   variant="outline" 
@@ -595,6 +1072,16 @@ ${application.idea_description}
                   className="text-blue-600 border-blue-300 hover:bg-blue-50"
                 >
                   Test TikTok Connection
+                </Button>
+              )}
+              {instagramAccessToken && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={testInstagramConnectionHandler}
+                  className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                >
+                  Test Instagram Connection
                 </Button>
               )}
               <Button variant="outline" onClick={exportToCSV} size="sm">
@@ -807,6 +1294,25 @@ ${application.idea_description}
                               >
                                 Post to TikTok
                               </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handlePostToInstagram(app)}
+                                className="text-pink-600 hover:text-pink-700"
+                                disabled={!instagramAccessToken}
+                              >
+                                Post to Instagram
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownloadWithWatermark(app)}
+                                className="text-blue-600 hover:text-blue-700"
+                              >
+                                <Download className="h-3 w-3 mr-1" />
+                                Download Copy of Video
+                              </Button>
+
                             </div>
                           </TableCell>
                         </TableRow>

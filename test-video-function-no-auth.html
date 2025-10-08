@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Video Watermark Function (No Auth)</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        button { padding: 10px 20px; margin: 10px 5px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        input, select { padding: 8px; width: 300px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; }
+        .result { margin: 20px 0; padding: 15px; border-radius: 4px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        pre { background-color: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Video Watermark Function (No Auth)</h1>
+        
+        <div>
+            <label for="supabaseUrl">Supabase Project URL:</label><br>
+            <input type="text" id="supabaseUrl" placeholder="Enter your Supabase URL" value="https://extalgkjlveevbkcpkuz.supabase.co" style="width: 100%;">
+            <br>
+            
+            <label for="videoPath">Video Path:</label><br>
+            <input type="text" id="videoPath" placeholder="Enter video path (e.g., videos/sample.mp4)" value="videos/sample.mp4" style="width: 100%;">
+            <br>
+            
+            <br>
+            <button id="testButton">Test Function (No Auth Header)</button>
+            <button id="clearButton">Clear Results</button>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        document.getElementById('testButton').addEventListener('click', async () => {
+            const supabaseUrl = document.getElementById('supabaseUrl').value;
+            const videoPath = document.getElementById('videoPath').value;
+            const resultDiv = document.getElementById('result');
+            
+            if (!supabaseUrl) {
+                showResult('Please enter your Supabase URL', 'error');
+                return;
+            }
+            
+            if (!videoPath) {
+                showResult('Please enter a video path', 'error');
+                return;
+            }
+            
+            try {
+                resultDiv.innerHTML = `<div class="result info"><p>Testing with video path: ${videoPath}</p></div>`;
+                
+                const functionUrl = `${supabaseUrl}/functions/v1/video-watermark`;
+                const requestBody = { videoPath: videoPath };
+                
+                console.log('Making request to:', functionUrl);
+                console.log('Request body:', JSON.stringify(requestBody));
+                
+                const response = await fetch(functionUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                        // No Authorization header - this is how it should be called
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                const responseText = await response.text();
+                console.log('Response status:', response.status);
+                console.log('Response text:', responseText);
+                
+                if (!response.ok) {
+                    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    try {
+                        const errorData = JSON.parse(responseText);
+                        errorMessage = errorData.error || errorData.message || errorMessage;
+                    } catch (e) {
+                        // If it's not JSON, use the raw text
+                        errorMessage = responseText || errorMessage;
+                    }
+                    throw new Error(errorMessage);
+                }
+                
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (parseError) {
+                    throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}...`);
+                }
+                
+                showResult(`
+                    <h3>Success!</h3>
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Message:</strong> ${data.message || 'No message'}</p>
+                    ${data.originalPath ? `<p><strong>Original Path:</strong> ${data.originalPath}</p>` : ''}
+                    ${data.watermarkedPath ? `<p><strong>Watermarked Path:</strong> ${data.watermarkedPath}</p>` : ''}
+                    ${data.watermarkedFileName ? `<p><strong>Watermarked Filename:</strong> ${data.watermarkedFileName}</p>` : ''}
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `, 'success');
+            } catch (error) {
+                console.error('Error:', error);
+                showResult(`
+                    <h3>Error:</h3>
+                    <p>${error.message}</p>
+                `, 'error');
+            }
+        });
+        
+        document.getElementById('clearButton').addEventListener('click', () => {
+            document.getElementById('result').innerHTML = '';
+        });
+        
+        function showResult(html, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = html;
+            resultDiv.className = `result ${type}`;
+        }
+    </script>
+</body>
+</html>

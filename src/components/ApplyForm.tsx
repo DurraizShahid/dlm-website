@@ -29,6 +29,7 @@ import { translations } from '@/i18n/translations';
 import { toast } from 'sonner';
 import { Upload, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { addWatermarkToVideo } from '@/utils/watermarkUtils'; // Added import for watermark utility
 
 const ApplyForm = () => {
   const { language } = useLanguage();
@@ -49,7 +50,7 @@ const ApplyForm = () => {
     defaultValues: {
       fullName: '',
       email: '',
-      age: 18,
+      age: 0,
       address: '',
       cnic: '',
       ideaTitle: '',
@@ -60,12 +61,13 @@ const ApplyForm = () => {
   const uploadVideo = async (file: File): Promise<string | null> => {
     try {
       setIsUploading(true);
-      toast.info(translate('Uploading video...'));
+      toast.info(translate('Processing and uploading video with watermark...'));
 
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `videos/${fileName}`;
 
+      // First, upload the original video
       const { error: uploadError } = await (supabase as any).storage
         .from('application-videos')
         .upload(filePath, file);
@@ -76,12 +78,32 @@ const ApplyForm = () => {
         return null;
       }
 
-      console.log('Video uploaded successfully to path:', filePath);
-      toast.success(translate('Video uploaded successfully'));
+      // Call the server-side watermarking function
+      toast.info(translate('Adding watermark to video...'));
       
-      // Return just the file path, not the full URL
-      // We'll generate signed URLs when displaying videos
-      return filePath;
+      const response = await fetch('/functions/v1/video-watermark', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(supabase as any).auth.session?.access_token || ''}`
+        },
+        body: JSON.stringify({ videoPath: filePath })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Watermarking error:', errorData);
+        toast.error(translate('Error processing video with watermark'));
+        // Return the original video path if watermarking fails
+        return filePath;
+      }
+
+      const result = await response.json();
+      console.log('Video processed successfully:', result);
+      toast.success(translate('Video processed with watermark successfully'));
+      
+      // Return the watermarked video path
+      return result.watermarkedPath;
     } catch (error) {
       console.error('Upload error:', error);
       toast.error(translate('Error uploading video'));
@@ -263,11 +285,32 @@ const ApplyForm = () => {
     setShowPaymentModal(true);
   };
 
-  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      form.setValue('video', file);
-      setUploadedVideoUrl(URL.createObjectURL(file));
+      try {
+        toast.info('Processing video with watermark...');
+        
+        // Add watermark to the video before setting it in the form
+        const watermarkedVideo = await addWatermarkToVideo(file);
+        
+        if (watermarkedVideo) {
+          form.setValue('video', watermarkedVideo);
+          setUploadedVideoUrl(URL.createObjectURL(watermarkedVideo));
+          toast.success('Video processed with watermark successfully');
+        } else {
+          // If watermarking fails, use the original video
+          form.setValue('video', file);
+          setUploadedVideoUrl(URL.createObjectURL(file));
+          toast.warning('Using original video - watermark processing failed');
+        }
+      } catch (error) {
+        console.error('Error processing video with watermark:', error);
+        // If there's an error, still allow the user to upload the original video
+        form.setValue('video', file);
+        setUploadedVideoUrl(URL.createObjectURL(file));
+        toast.error('Error processing video with watermark. Using original video.');
+      }
     }
   };
 

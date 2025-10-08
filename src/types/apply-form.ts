@@ -29,7 +29,7 @@ export const applyFormSchema = z.object({
     .min(1, "Email is required."),
   age: z
     .number()
-    .min(18, "You must be at least 18 years old.")
+    .min(0, "Age must be a positive number.")
     .max(100, "Age cannot exceed 100."),
   address: z
     .string()

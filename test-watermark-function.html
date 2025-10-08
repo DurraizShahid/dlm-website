@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Video Watermark Function</title>
+</head>
+<body>
+    <h1>Test Video Watermark Function</h1>
+    <button id="testButton">Test Function</button>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('testButton').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/functions/v1/video-watermark', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        videoPath: 'videos/test.mp4'
+                    })
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', [...response.headers.entries()]);
+                
+                const text = await response.text();
+                console.log('Response text:', text);
+                
+                document.getElementById('result').innerHTML = `
+                    <h2>Response:</h2>
+                    <p>Status: ${response.status}</p>
+                    <p>Text: ${text}</p>
+                    <p>Is JSON: ${isValidJson(text)}</p>
+                `;
+                
+                if (isValidJson(text)) {
+                    const data = JSON.parse(text);
+                    document.getElementById('result').innerHTML += `
+                        <h3>Parsed Data:</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = `<p>Error: ${error.message}</p>`;
+            }
+        });
+        
+        function isValidJson(str) {
+            try {
+                JSON.parse(str);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+    </script>
+</body>
+</html>

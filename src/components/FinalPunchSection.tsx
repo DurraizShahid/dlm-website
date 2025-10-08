@@ -12,10 +12,10 @@ const FinalPunchSection = () => {
     <section className="text-white py-16 px-4 sm:py-24 sm:px-8 text-center">
       <div className="max-w-4xl mx-auto space-y-8">
         <h2 className="text-3xl sm:text-5xl font-extrabold leading-tight tracking-tight">
-          {translate("Opportunities Like This Don’t Come Twice.")}
+          {translate("Opportunities Like This Don't Come Twice.")}
         </h2>
         <p className="text-lg sm:text-xl italic opacity-90">
-          Aise mauqe baar baar nahi milte.
+          {translate("Aise mauqe baar baar nahi milte.")}
         </p>
         <div className="pt-8">
           <Link to="/apply">
