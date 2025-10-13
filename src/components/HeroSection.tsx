@@ -26,7 +26,7 @@ const HeroSection = () => {
           {translate("Pakistan’s first platform giving everyday people the chance to win 10 Lakh Rupees to bring their idea to life.")}
         </p>
         <p className="text-md sm:text-xl animate-fade-in-up delay-200 italic opacity-90">
-          {translate("Pakistan’s first platform giving everyday people the chance to win 10 Lakh Rupees to bring their idea to life.")}
+          {translate("Pakistan ka pehla platform jo aam logon ko apna idea haqeeqat mein laane ke liye 10 Lakh rupay jeetne ka mauqa deta hai.")}
         </p>
         <div className="pt-8 flex flex-col sm:flex-row justify-center items-center gap-4 animate-fade-in-up delay-600">
           <Link to="/apply">

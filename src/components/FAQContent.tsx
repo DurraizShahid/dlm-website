@@ -30,8 +30,8 @@ const FAQContent = () => {
     {
       question: translate("Is there any fee to apply?"),
       urduQuestion: "Kya apply karne ki koi fees hai?",
-      answer: translate("No, applying to DLM is 100% free. Our goal is to remove barriers, not create them."),
-      urduAnswer: "Nahi, DLM mein apply karna 100% muft hai. Hamara maqsad rukawaton ko khatam karna hai, na ke unhe banana.",
+      answer: translate("Yes, we charge 5000 PKR. Our goal is to remove barriers, not create them."),
+      urduAnswer: "Jee, DLM mein apply karna aur idea jamah karwanay ki fees 5000 hai. Hamara maqsad rukawaton ko khatam karna hai, na ke unhe banana.",
     },
     {
       question: translate("What if my idea isn’t “big enough”?"),
