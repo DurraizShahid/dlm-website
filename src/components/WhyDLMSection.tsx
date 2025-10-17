@@ -21,13 +21,7 @@ const WhyDLMSection = () => {
         <p className="text-md sm:text-xl italic opacity-90 text-gray-600">
           Har kisi ke paas family connections, investors, ya startup backing nahi hoti. DLM aap jaise logon ke liye hai—talib-e-ilm, mehnatkash, creators, innovators—jinhe bas ek mauqa chahiye.
         </p>
-        <p className="text-lg sm:text-xl text-gray-700 pt-4">
-          It's an initiative that helps people improve themselves, their professionalism and their ideas through guidance, mentorship, and exposure.
-        </p>
-        <p className="text-md sm:text-xl italic opacity-90 text-gray-600">
-          Ye ek initiative hai jo logon ko apne aap ko, apne professionalism ko, aur apne ideas ko improve karne mein help karta hai — guidance, mentorship, aur exposure ke zariye.
-        </p>
-        <p className="text-xl sm:text-2xl font-bold text-green-600 pt-4">
+        <p className="text-xl sm:text-2xl font-bold text-green-600 pt-6">
           {translate("This isn't charity. This is opportunity.")}
         </p>
       </div>

@@ -3,6 +3,7 @@
 import React from "react";
 import HeroSection from "@/components/HeroSection";
 import WhyDLMSection from "@/components/WhyDLMSection";
+import InitiativeSection from "@/components/InitiativeSection";
 import HowItWorksSection from "@/components/HowItWorksSection";
 import UrgencySection from "@/components/UrgencySection";
 import SuccessStoriesSection from "@/components/SuccessStoriesSection";
@@ -14,6 +15,7 @@ const Index = () => {
       <HeroSection />
       <WhyDLMSection />
       <HowItWorksSection />
+      <InitiativeSection />
       <UrgencySection />
       <SuccessStoriesSection />
       <FinalPunchSection />

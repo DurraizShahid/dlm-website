@@ -296,7 +296,14 @@ export const translations = {
   "Apply Now & Start Learning": { en: "Apply Now & Start Learning", ur: "ابھی درخواست دیں اور سیکھنا شروع کریں" },
   "View Free Resources": { en: "View Free Resources", ur: "مفت وسائل دیکھیں" },
   "It's More Than Just Funding": { en: "It's More Than Just Funding", ur: "یہ صرف فنڈنگ سے زیادہ ہے" },
-  "Transform yourself while transforming your business": { en: "Transform yourself while transforming your business", ur: "اپنے کاروبار کو تبدیل کرتے وقت اپنے آپ کو بھی تبدیل کریں" }
+  "Transform yourself while transforming your business": { en: "Transform yourself while transforming your business", ur: "اپنے کاروبار کو تبدیل کرتے وقت اپنے آپ کو بھی تبدیل کریں" },
+  
+  // Initiative Section translations
+  "What Makes DLM Different?": { en: "What Makes DLM Different?", ur: "DLM کو الگ کیا بناتا ہے؟" },
+  "Guidance": { en: "Guidance", ur: "رہنمائی" },
+  "Mentorship": { en: "Mentorship", ur: "رہنمائی" },
+  "Exposure": { en: "Exposure", ur: "نمائش" },
+  "Explore DLM Academy": { en: "Explore DLM Academy", ur: "ڈی ایل ایم اکیڈمی دریافت کریں" }
 };
 
 export type TranslationKeys = keyof typeof translations;
