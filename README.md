@@ -16,11 +16,11 @@ This website includes the following features:
 
 ## Recent Updates
 
+- **Completely redesigned watermarking system** - Production-ready client-side implementation
 - Added Instagram posting functionality to complement the existing TikTok integration
-- Enhanced admin dashboard with Instagram connection controls
+- Enhanced admin dashboard with Instagram connection controls and watermarking features
 - Implemented Instagram API proxy to handle CORS restrictions
-- Added video watermarking functionality (both client-side and server-side options)
-- Created standalone watermarking service for deployment on Render
+- High-quality video watermarking with progress tracking and automatic retry logic
 
 ## Setup Instructions
 
@@ -63,26 +63,13 @@ The application uses Supabase functions for API proxying:
 
 1. **TikTok Proxy**: Handles TikTok API requests to bypass CORS restrictions
 2. **Instagram Proxy**: Handles Instagram API requests to bypass CORS restrictions
-3. **Video Watermark**: Handles server-side video watermarking (limited implementation)
 
 Deploy these functions using the Supabase CLI:
 
 ```bash
 supabase functions deploy tiktok-proxy --project-ref your_project_id
 supabase functions deploy instagram-proxy --project-ref your_project_id
-supabase functions deploy video-watermark --project-ref your_project_id
 ```
-
-### Render Watermarking Service
-
-A standalone watermarking service is available in the `render-watermark-service` directory for deployment to Render:
-
-1. Create a new Web Service on Render
-2. Connect it to your GitHub repository
-3. Set the root directory to `render-watermark-service`
-4. Add the required environment variables in the Render dashboard:
-   - `SUPABASE_URL`
-   - `SUPABASE_SERVICE_ROLE_KEY`
 
 ## Instagram Integration
 
@@ -112,14 +99,20 @@ For detailed setup instructions, refer to [TIKTOK_INTEGRATION.md](TIKTOK_INTEGRA
 
 ## Video Watermarking
 
-The application includes two approaches to video watermarking:
+The application uses a **production-ready client-side watermarking system**:
 
-1. **Client-Side Watermarking**: Implemented directly in the admin dashboard using HTML5 Canvas API
-2. **Server-Side Watermarking**: Available through Supabase functions or the standalone Render service
+- **High-Quality Output**: 8 Mbps bitrate for excellent video quality
+- **Reliable Audio**: Web Audio API ensures audio preservation
+- **Progress Tracking**: Real-time frame-by-frame progress updates
+- **Automatic Retry**: 3 attempts with exponential backoff
+- **Watermark Verification**: Confirms watermark was applied correctly
+- **Memory Safe**: Comprehensive cleanup prevents memory leaks
+- **Customizable**: Adjust position, opacity, size, and watermark image
 
-For detailed implementation information, refer to:
-- [CLIENT_SIDE_WATERMARKING.md](CLIENT_SIDE_WATERMARKING.md)
-- [VIDEO_WATERMARKING.md](VIDEO_WATERMARKING.md)
+Watermarking happens in the admin dashboard when downloading videos. No server processing required.
+
+For complete documentation, refer to:
+- [WATERMARKING_SYSTEM.md](WATERMARKING_SYSTEM.md) - Full system documentation
 
 ## Development
 
@@ -167,10 +160,10 @@ For Render watermarking service deployment:
 ## Troubleshooting
 
 For common issues and solutions, refer to:
-- [DEBUGGING_GUIDE.md](DEBUGGING_GUIDE.md)
-- [TIKTOK_TROUBLESHOOTING.md](TIKTOK_TROUBLESHOOTING.md)
-- [INSTAGRAM_INTEGRATION.md](INSTAGRAM_INTEGRATION.md) (for Instagram issues)
-- [TROUBLESHOOTING_VIDEO_WATERMARK.md](TROUBLESHOOTING_VIDEO_WATERMARK.md) (for watermarking issues)
+- [WATERMARKING_SYSTEM.md](WATERMARKING_SYSTEM.md) - Comprehensive watermarking documentation
+- [DEBUGGING_GUIDE.md](DEBUGGING_GUIDE.md) - General debugging guide
+- [TIKTOK_TROUBLESHOOTING.md](TIKTOK_TROUBLESHOOTING.md) - TikTok integration issues
+- [INSTAGRAM_INTEGRATION.md](INSTAGRAM_INTEGRATION.md) - Instagram setup and issues
 
 ## Contributing
 

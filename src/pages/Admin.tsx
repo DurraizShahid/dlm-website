@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { generateVideoSignedUrl } from '@/utils/videoUtils';
 import { refreshTikTokAccessToken, postVideoToTikTok, generateTikTokOAuthUrl, exchangeCodeForAccessToken, getTikTokUserInfo, testTikTokConnection } from '@/utils/tiktokUtils';
 import { generateInstagramOAuthUrl, postVideoToInstagram, getInstagramAccounts, exchangeCodeForAccessToken as exchangeInstagramCodeForAccessToken, getInstagramUserInfo, testInstagramConnection } from '@/utils/instagramUtils';
+import { addWatermarkToVideo, verifyWatermark, validateVideoForWatermarking, type WatermarkOptions, type WatermarkProgress } from '@/utils/videoWatermark';
 import { toast } from 'sonner';
 import { 
   Shield, 
@@ -542,8 +543,11 @@ ${application.idea_description}
     }
   };
 
-  // New function to handle downloading video with watermark
-  const handleDownloadWithWatermark = async (application: Application) => {
+  // Enhanced function to handle downloading video with watermark (with retry logic)
+  const handleDownloadWithWatermark = async (application: Application, retryCount = 0) => {
+    const maxRetries = 2;
+    let progressToastId: string | number | undefined;
+    
     try {
       toast.info(`Preparing to download "${application.idea_title}" with watermark...`);
       
@@ -565,271 +569,100 @@ ${application.idea_description}
       
       const videoFileName = application.video_url.split('/').pop() || 'video.mp4';
       const fileNameWithoutExt = videoFileName.split('.')[0];
-      // Use .webm extension for watermarked videos since they're re-encoded in WebM format
       const watermarkedFileName = `${fileNameWithoutExt}_watermarked.webm`;
       
-      // Attempt client-side watermarking
-      toast.info('Adding watermark to video (this may take a moment)...');
+      // Progress callback for real-time updates
+      const onProgress = (progress: WatermarkProgress) => {
+        const percent = Math.round(progress.percent);
+        let message = '';
+        
+        if (progress.phase === 'loading') {
+          message = `Loading video... ${percent}%`;
+        } else if (progress.phase === 'processing') {
+          if (progress.currentFrame && progress.totalFrames) {
+            message = `Processing frame ${progress.currentFrame}/${progress.totalFrames} (${percent}%)`;
+          } else {
+            message = `Adding watermark... ${percent}%`;
+          }
+        } else if (progress.phase === 'finalizing') {
+          message = `Finalizing video... ${percent}%`;
+        }
+        
+        // Update the same toast with progress
+        if (!progressToastId) {
+          progressToastId = toast.loading(message);
+        } else {
+          toast.loading(message, { id: progressToastId });
+        }
+      };
+      
+      // Watermarking options
+      const watermarkOptions: WatermarkOptions = {
+        position: 'top-left',
+        opacity: 0.7,
+        scale: 0.15,
+        margin: 20
+      };
       
       try {
-        const watermarkedBlob = await addWatermarkToVideoClientSide(signedUrl);
+        // Add watermark with progress tracking
+        const watermarkedBlob = await addWatermarkToVideo(signedUrl, watermarkOptions, onProgress);
+        
+        // Dismiss progress toast
+        if (progressToastId) {
+          toast.dismiss(progressToastId);
+        }
+        
+        // Verify watermark was applied
+        toast.info('Verifying watermark...');
+        const blobUrl = URL.createObjectURL(watermarkedBlob);
+        const hasWatermark = await verifyWatermark(blobUrl);
+        
+        if (!hasWatermark) {
+          console.warn('Watermark verification failed - continuing anyway');
+        }
         
         // Create a temporary link to trigger download
         const link = document.createElement('a');
-        link.href = URL.createObjectURL(watermarkedBlob);
+        link.href = blobUrl;
         link.download = watermarkedFileName;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         
-        // Clean up the object URL
-        URL.revokeObjectURL(link.href);
+        // Clean up the object URL after a short delay
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
         
         toast.success(`Successfully downloaded "${application.idea_title}" with watermark!`);
-      } catch (processingError: any) {
-        console.warn('Client-side watermarking failed:', processingError);
         
-        // Fallback: open the video in a new tab so user can download manually
-        toast.error(`Watermarking failed: ${processingError.message}. Opening video in new tab.`);
+      } catch (processingError: any) {
+        // Dismiss progress toast
+        if (progressToastId) {
+          toast.dismiss(progressToastId);
+        }
+        
+        console.error('Client-side watermarking failed:', processingError);
+        
+        // Retry logic
+        if (retryCount < maxRetries) {
+          toast.info(`Retrying watermarking (attempt ${retryCount + 2}/${maxRetries + 1})...`);
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+          return handleDownloadWithWatermark(application, retryCount + 1);
+        }
+        
+        // After all retries failed, offer fallback
+        toast.error(`Watermarking failed after ${maxRetries + 1} attempts: ${processingError.message}. Opening video in new tab.`);
         window.open(signedUrl, '_blank');
       }
     } catch (error: any) {
+      // Dismiss progress toast
+      if (progressToastId) {
+        toast.dismiss(progressToastId);
+      }
+      
       console.error('Error downloading video with watermark:', error);
       toast.error(`Error: ${error.message || 'Failed to download video with watermark'}`);
     }
-  };
-
-  // Function to add watermark to video client-side
-  const addWatermarkToVideoClientSide = async (videoUrl: string): Promise<Blob> => {
-    return new Promise(async (resolve, reject) => {
-      try {
-        // Create video element (muted to prevent audio playback during processing)
-        const video = document.createElement('video');
-        video.src = videoUrl;
-        video.playsInline = true;
-        video.crossOrigin = 'anonymous';
-        video.muted = true; // Mute to prevent audio during processing (stream still captures audio)
-        
-        // Create canvas for frame processing
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        if (!ctx) {
-          reject(new Error('Could not get canvas context'));
-          return;
-        }
-        
-        // Load watermark image
-        const watermark = new Image();
-        watermark.crossOrigin = 'Anonymous';
-        watermark.src = '/logo.png';
-        
-        let watermarkLoaded = false;
-        
-        watermark.onload = () => {
-          watermarkLoaded = true;
-          startProcessingIfReady();
-        };
-        
-        const startProcessingIfReady = async () => {
-          // Only start processing when both video metadata and watermark are loaded
-          if (video.readyState >= 2 && watermarkLoaded) {
-            try {
-              // Set canvas dimensions to match video
-              canvas.width = video.videoWidth;
-              canvas.height = video.videoHeight;
-              
-              // Get the original video's frame rate (default to 30 if not available)
-              const fps = 30;
-              
-              // Create canvas stream for video
-              const canvasStream = canvas.captureStream(fps);
-              
-              // Create a new MediaStream that will include both video and audio
-              const combinedStream = new MediaStream();
-              
-              // Add video track from canvas
-              const videoTrack = canvasStream.getVideoTracks()[0];
-              if (videoTrack) {
-                combinedStream.addTrack(videoTrack);
-              }
-              
-              // Extract and add audio track from original video
-              // We need to create a temporary video element to get the audio track
-              const audioVideo = document.createElement('video');
-              audioVideo.src = videoUrl;
-              audioVideo.crossOrigin = 'anonymous';
-              audioVideo.muted = true; // Mute to prevent double audio during processing (stream still captures audio)
-              
-              await new Promise((resolveAudio) => {
-                audioVideo.addEventListener('loadedmetadata', () => {
-                  resolveAudio(true);
-                }, { once: true });
-              });
-              
-              // Capture the audio from the original video
-              try {
-                // @ts-ignore - captureStream is not in TypeScript definitions for all browsers
-                const audioStream = audioVideo.captureStream ? audioVideo.captureStream() : audioVideo.mozCaptureStream();
-                const audioTracks = audioStream.getAudioTracks();
-                
-                console.log(`Found ${audioTracks.length} audio track(s) in original video`);
-                
-                if (audioTracks.length > 0) {
-                  const audioTrack = audioTracks[0];
-                  combinedStream.addTrack(audioTrack);
-                  console.log('Audio track added to watermarked video:', {
-                    id: audioTrack.id,
-                    kind: audioTrack.kind,
-                    label: audioTrack.label,
-                    enabled: audioTrack.enabled,
-                    muted: audioTrack.muted,
-                    readyState: audioTrack.readyState
-                  });
-                } else {
-                  console.warn('No audio track found in original video - watermarked video will have no sound');
-                  toast.warning('Original video has no audio track');
-                }
-              } catch (audioError) {
-                console.error('Could not extract audio track:', audioError);
-                toast.warning('Could not extract audio - watermarked video may have no sound');
-              }
-              
-              // Create MediaRecorder with the combined stream (video + audio)
-              const chunks: Blob[] = [];
-              
-              // Try to use the same codec as the original video
-              let mimeType = 'video/webm;codecs=h264';
-              if (!MediaRecorder.isTypeSupported(mimeType)) {
-                mimeType = 'video/webm;codecs=vp8,opus';
-              }
-              if (!MediaRecorder.isTypeSupported(mimeType)) {
-                mimeType = 'video/webm';
-              }
-              
-              const mediaRecorder = new MediaRecorder(combinedStream, {
-                mimeType: mimeType,
-                videoBitsPerSecond: 5000000 // 5 Mbps for good quality
-              });
-              
-              console.log(`Recording with MIME type: ${mimeType}`);
-              console.log('MediaRecorder stream tracks:', {
-                video: combinedStream.getVideoTracks().length,
-                audio: combinedStream.getAudioTracks().length,
-                total: combinedStream.getTracks().length
-              });
-              
-              // Handle recorded data
-              mediaRecorder.ondataavailable = (e) => {
-                if (e.data.size > 0) {
-                  chunks.push(e.data);
-                }
-              };
-              
-              // Handle recording stop
-              mediaRecorder.onstop = () => {
-                const watermarkedBlob = new Blob(chunks, { type: mimeType });
-                resolve(watermarkedBlob);
-              };
-              
-              // Handle recording error
-              mediaRecorder.onerror = (e) => {
-                console.error('MediaRecorder error:', e);
-                reject(new Error('Failed to record watermarked video'));
-              };
-              
-              // Start recording
-              mediaRecorder.start(100); // Collect data every 100ms
-              
-              // Process video frames at the correct frame rate
-              const frameInterval = 1000 / fps;
-              let frameCount = 0;
-              
-              const processFrame = () => {
-                if (video.paused || video.ended) {
-                  mediaRecorder.stop();
-                  audioVideo.pause();
-                  return;
-                }
-                
-                // Draw video frame to canvas
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                
-                // Add watermark overlay
-                const watermarkWidth = canvas.width * 0.15; // 15% of video width
-                const scale = watermarkWidth / watermark.width;
-                const watermarkHeight = watermark.height * scale;
-                
-                // Position watermark in top-left corner
-                ctx.globalAlpha = 0.7; // Semi-transparent
-                ctx.drawImage(
-                  watermark,
-                  20, // x position
-                  20, // y position
-                  watermarkWidth,
-                  watermarkHeight
-                );
-                ctx.globalAlpha = 1.0;
-                
-                frameCount++;
-                
-                // Continue processing at the same frame rate as the video
-                setTimeout(() => requestAnimationFrame(processFrame), frameInterval);
-              };
-              
-              // Start both videos at the same time
-              video.currentTime = 0;
-              audioVideo.currentTime = 0;
-              
-              // Start video and audio playback
-              const playPromises = [
-                video.play(),
-                audioVideo.play()
-              ];
-              
-              await Promise.all(playPromises);
-              
-              // Start processing frames
-              requestAnimationFrame(processFrame);
-              
-              // Auto-stop after video duration or 60 seconds max
-              const maxDuration = Math.min(video.duration * 1000, 60000);
-              setTimeout(() => {
-                if (mediaRecorder.state !== 'inactive') {
-                  video.pause();
-                  audioVideo.pause();
-                  mediaRecorder.stop();
-                }
-              }, maxDuration + 1000); // Add 1 second buffer
-              
-            } catch (processingError) {
-              console.error('Error during video processing:', processingError);
-              reject(processingError);
-            }
-          }
-        };
-        
-        // When video metadata is loaded
-        video.addEventListener('loadedmetadata', () => {
-          startProcessingIfReady();
-        });
-        
-        // Handle video load error
-        video.addEventListener('error', (e) => {
-          console.error('Video loading error:', e);
-          reject(new Error('Failed to load video'));
-        });
-        
-        // Handle watermark load error
-        watermark.onerror = () => {
-          reject(new Error('Failed to load watermark image'));
-        };
-        
-      } catch (error) {
-        console.error('Error in watermarking setup:', error);
-        reject(error);
-      }
-    });
   };
 
   const getStatusBadge = (status: string) => {
