@@ -40,9 +40,35 @@ const ApplyForm = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [existingCnicData, setExistingCnicData] = useState<any>(null);
   const [pendingFormData, setPendingFormData] = useState<ApplyFormData | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const translate = (key: keyof typeof translations) => {
     return translations[key]?.[language] || translations[key]?.en || key;
+  };
+
+  // CNIC formatting function
+  const formatCNIC = (value: string): string => {
+    // Remove all non-digit characters
+    const digits = value.replace(/\D/g, '');
+    
+    // Format: 12345-1234567-1 (5 digits, 7 digits, 1 digit)
+    let formatted = '';
+    
+    if (digits.length <= 5) {
+      formatted = digits;
+    } else if (digits.length <= 12) {
+      formatted = `${digits.slice(0, 5)}-${digits.slice(5)}`;
+    } else {
+      formatted = `${digits.slice(0, 5)}-${digits.slice(5, 12)}-${digits.slice(12, 13)}`;
+    }
+    
+    return formatted;
+  };
+
+  // Validate CNIC format
+  const isValidCNICFormat = (value: string): boolean => {
+    const cnicRegex = /^\d{5}-\d{7}-\d{1}$/;
+    return cnicRegex.test(value);
   };
 
   const form = useForm<ApplyFormData>({
@@ -263,19 +289,68 @@ const ApplyForm = () => {
     setShowPaymentModal(true);
   };
 
+  // Handle video file selection (both from input and drag-drop)
+  const handleVideoFile = (file: File) => {
+    // Validate file type
+    const validTypes = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('Invalid file type. Please upload MP4, MOV, or AVI video files.');
+      return;
+    }
+
+    // Validate file size (200MB max)
+    const maxSize = 200 * 1024 * 1024; // 200MB in bytes
+    if (file.size > maxSize) {
+      toast.error('File is too large. Maximum size is 200MB.');
+      return;
+    }
+
+    // Store the file for upload later, after validation
+    form.setValue('video', file);
+    setUploadedVideoUrl(URL.createObjectURL(file));
+    toast.success('Video selected successfully!');
+  };
+
   const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Store the file for upload later, after validation
-      form.setValue('video', file);
-      setUploadedVideoUrl(URL.createObjectURL(file));
-      toast.success('Video selected');
+      handleVideoFile(file);
     }
   };
 
   const removeVideo = () => {
     form.setValue('video', undefined as any);
     setUploadedVideoUrl(null);
+  };
+
+  // Drag and drop handlers
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      handleVideoFile(file);
+    }
   };
 
   return (
@@ -386,21 +461,55 @@ const ApplyForm = () => {
                 <FormField
                   control={form.control}
                   name="cnic"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-semibold text-gray-700">
-                        {translate('CNIC')}
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="12345-1234567-1"
-                          {...field}
-                          className="h-12 border-2 border-gray-200 focus:border-blue-500"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const hasValue = field.value && field.value.length > 0;
+                    const isValid = hasValue && isValidCNICFormat(field.value);
+                    const isInvalid = hasValue && !isValid && field.value.replace(/\D/g, '').length === 13;
+                    
+                    return (
+                      <FormItem>
+                        <FormLabel className="text-sm font-semibold text-gray-700">
+                          {translate('CNIC')}
+                        </FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              type="tel"
+                              inputMode="numeric"
+                              pattern="[0-9-]*"
+                              placeholder="12345-1234567-1"
+                              value={field.value}
+                              onChange={(e) => {
+                                const formatted = formatCNIC(e.target.value);
+                                field.onChange(formatted);
+                              }}
+                              onBlur={field.onBlur}
+                              name={field.name}
+                              ref={field.ref}
+                              maxLength={15}
+                              className={`h-12 border-2 pr-10 ${
+                                isValid 
+                                  ? 'border-green-500 focus:border-green-600' 
+                                  : isInvalid
+                                  ? 'border-red-500 focus:border-red-600'
+                                  : 'border-gray-200 focus:border-blue-500'
+                              }`}
+                            />
+                            {isValid && (
+                              <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-green-500" />
+                            )}
+                            {isInvalid && (
+                              <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-red-500" />
+                            )}
+                          </div>
+                        </FormControl>
+                        <FormDescription className="text-xs text-gray-500">
+                          Format: 12345-1234567-1 (automatically formatted as you type)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
 
                 {/* Idea Title */}
@@ -462,26 +571,55 @@ const ApplyForm = () => {
                       </FormDescription>
                       
                       {!uploadedVideoUrl ? (
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
-                          <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                          <p className="text-gray-600 mb-4">
-                            {translate('Drag & drop your video here, or click to browse')}
+                        <div 
+                          className={`border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 cursor-pointer ${
+                            isDragging 
+                              ? 'border-blue-500 bg-blue-50 scale-[1.02]' 
+                              : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+                          }`}
+                          onDragEnter={handleDragEnter}
+                          onDragLeave={handleDragLeave}
+                          onDragOver={handleDragOver}
+                          onDrop={handleDrop}
+                          onClick={() => document.getElementById('video-upload')?.click()}
+                        >
+                          <Upload className={`mx-auto h-12 w-12 mb-4 transition-colors ${
+                            isDragging ? 'text-blue-500' : 'text-gray-400'
+                          }`} />
+                          <p className={`font-medium mb-2 ${
+                            isDragging ? 'text-blue-600' : 'text-gray-700'
+                          }`}>
+                            {isDragging 
+                              ? translate('Drop your video here!') 
+                              : translate('Drag & drop your video here')}
+                          </p>
+                          <p className="text-gray-500 text-sm mb-4">
+                            {translate('or click to browse from your device')}
                           </p>
                           <input
                             type="file"
-                            accept="video/mp4,video/quicktime,video/x-msvideo"
+                            accept="video/mp4,video/quicktime,video/x-msvideo,video/webm,video/*"
+                            capture="environment"
                             onChange={handleVideoChange}
                             className="hidden"
                             id="video-upload"
+                            multiple={false}
                           />
                           <Button
                             type="button"
                             variant="outline"
-                            onClick={() => document.getElementById('video-upload')?.click()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              document.getElementById('video-upload')?.click();
+                            }}
                             disabled={isUploading}
+                            className="pointer-events-auto"
                           >
-                            {isUploading ? translate('Uploading video...') : 'Choose Video'}
+                            {isUploading ? translate('Uploading video...') : translate('Choose Video')}
                           </Button>
+                          <p className="text-xs text-gray-400 mt-3">
+                            MP4, MOV, AVI, WebM • Max 200MB
+                          </p>
                         </div>
                       ) : (
                         <div className="border-2 border-green-200 rounded-lg p-4 bg-green-50">
