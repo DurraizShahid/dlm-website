@@ -571,31 +571,8 @@ const ApplyForm = () => {
                       </FormDescription>
                       
                       {!uploadedVideoUrl ? (
-                        <div 
-                          className={`border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 cursor-pointer ${
-                            isDragging 
-                              ? 'border-blue-500 bg-blue-50 scale-[1.02]' 
-                              : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
-                          }`}
-                          onDragEnter={handleDragEnter}
-                          onDragLeave={handleDragLeave}
-                          onDragOver={handleDragOver}
-                          onDrop={handleDrop}
-                          onClick={() => document.getElementById('video-upload')?.click()}
-                        >
-                          <Upload className={`mx-auto h-12 w-12 mb-4 transition-colors ${
-                            isDragging ? 'text-blue-500' : 'text-gray-400'
-                          }`} />
-                          <p className={`font-medium mb-2 ${
-                            isDragging ? 'text-blue-600' : 'text-gray-700'
-                          }`}>
-                            {isDragging 
-                              ? translate('Drop your video here!') 
-                              : translate('Drag & drop your video here')}
-                          </p>
-                          <p className="text-gray-500 text-sm mb-4">
-                            {translate('or click to browse from your device')}
-                          </p>
+                        <div>
+                          {/* Hidden file input - works better when not using programmatic clicks */}
                           <input
                             type="file"
                             accept="video/mp4,video/quicktime,video/x-msvideo,video/webm,video/*"
@@ -605,21 +582,68 @@ const ApplyForm = () => {
                             id="video-upload"
                             multiple={false}
                           />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              document.getElementById('video-upload')?.click();
-                            }}
-                            disabled={isUploading}
-                            className="pointer-events-auto"
+                          
+                          {/* Label acts as the clickable area - works in all browsers including embedded ones */}
+                          <label 
+                            htmlFor="video-upload"
+                            className={`block border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 cursor-pointer ${
+                              isDragging 
+                                ? 'border-blue-500 bg-blue-50 scale-[1.02]' 
+                                : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+                            }`}
+                            onDragEnter={handleDragEnter}
+                            onDragLeave={handleDragLeave}
+                            onDragOver={handleDragOver}
+                            onDrop={handleDrop}
                           >
-                            {isUploading ? translate('Uploading video...') : translate('Choose Video')}
-                          </Button>
-                          <p className="text-xs text-gray-400 mt-3">
-                            MP4, MOV, AVI, WebM • Max 200MB
-                          </p>
+                            <Upload className={`mx-auto h-12 w-12 mb-4 transition-colors ${
+                              isDragging ? 'text-blue-500' : 'text-gray-400'
+                            }`} />
+                            <p className={`font-medium mb-2 ${
+                              isDragging ? 'text-blue-600' : 'text-gray-700'
+                            }`}>
+                              {isDragging 
+                                ? translate('Drop your video here!') 
+                                : translate('Drag & drop your video here')}
+                            </p>
+                            <p className="text-gray-500 text-sm mb-4">
+                              {translate('or click to browse from your device')}
+                            </p>
+                            <span
+                              className={`inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium ${
+                                isUploading 
+                                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                  : 'bg-white text-gray-700 hover:bg-gray-50'
+                              }`}
+                            >
+                              {isUploading ? translate('Uploading video...') : translate('Choose Video')}
+                            </span>
+                            <p className="text-xs text-gray-400 mt-3">
+                              MP4, MOV, AVI, WebM • Max 200MB
+                            </p>
+                          </label>
+                          
+                          {/* Alternative direct button for problematic browsers */}
+                          <div className="mt-2 text-center">
+                            <p className="text-xs text-gray-500 mb-2">
+                              {translate('Having trouble? Try the button below:')}
+                            </p>
+                            <label 
+                              htmlFor="video-upload-alt"
+                              className="inline-flex items-center justify-center px-4 py-2 border-2 border-blue-500 rounded-md shadow-sm text-sm font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer"
+                            >
+                              📹 {translate('Select Video File')}
+                            </label>
+                            <input
+                              type="file"
+                              accept="video/*"
+                              capture="environment"
+                              onChange={handleVideoChange}
+                              className="hidden"
+                              id="video-upload-alt"
+                              multiple={false}
+                            />
+                          </div>
                         </div>
                       ) : (
                         <div className="border-2 border-green-200 rounded-lg p-4 bg-green-50">

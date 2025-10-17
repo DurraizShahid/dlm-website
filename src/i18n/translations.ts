@@ -90,6 +90,8 @@ export const translations = {
   "Drag & drop your video here": { en: "Drag & drop your video here", ur: "اپنی ویڈیو یہاں ڈریگ اور ڈراپ کریں" },
   "or click to browse from your device": { en: "or click to browse from your device", ur: "یا اپنے ڈیوائس سے براؤز کرنے کے لیے کلک کریں" },
   "Choose Video": { en: "Choose Video", ur: "ویڈیو منتخب کریں" },
+  "Having trouble? Try the button below:": { en: "Having trouble? Try the button below:", ur: "مسئلہ ہو رہا ہے؟ نیچے والا بٹن آزمائیں:" },
+  "Select Video File": { en: "Select Video File", ur: "ویڈیو فائل منتخب کریں" },
   "Submit Application": { en: "Submit Application", ur: "درخواست جمع کریں" },
   "Application submitted successfully! (Simulated)": { en: "Application submitted successfully! (Simulated)", ur: "درخواست کامیابی سے جمع ہو گئی! (نقلی)" },
   "English": { en: "English", ur: "انگریزی" },
