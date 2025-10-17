@@ -5,12 +5,16 @@
  * with high-quality output, reliable audio handling, progress tracking, and proper cleanup.
  */
 
+import { FFmpeg } from '@ffmpeg/ffmpeg';
+import { fetchFile, toBlobURL } from '@ffmpeg/util';
+
 export interface WatermarkOptions {
   position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center';
   opacity?: number; // 0-1
   scale?: number; // 0.05-0.3 (percentage of video width)
   margin?: number; // pixels from edge
   watermarkUrl?: string;
+  outputFormat?: 'webm' | 'mp4'; // Output format
 }
 
 export interface WatermarkProgress {
@@ -27,7 +31,8 @@ const DEFAULT_OPTIONS: Required<WatermarkOptions> = {
   opacity: 0.7,
   scale: 0.15,
   margin: 20,
-  watermarkUrl: '/logo.png'
+  watermarkUrl: '/logo.png',
+  outputFormat: 'webm' // Default to WebM (faster, more reliable). Set to 'mp4' if needed.
 };
 
 /**
@@ -60,6 +65,133 @@ function calculateWatermarkPosition(
       };
     default:
       return { x: margin, y: margin };
+  }
+}
+
+// FFmpeg instance (singleton)
+let ffmpegInstance: FFmpeg | null = null;
+let ffmpegLoaded = false;
+
+/**
+ * Load FFmpeg instance with timeout
+ */
+async function loadFFmpeg(): Promise<FFmpeg> {
+  if (ffmpegInstance && ffmpegLoaded) {
+    return ffmpegInstance;
+  }
+  
+  if (!ffmpegInstance) {
+    ffmpegInstance = new FFmpeg();
+    
+    // Add logging for debugging
+    ffmpegInstance.on('log', ({ message }) => {
+      console.log('[FFmpeg]', message);
+    });
+  }
+  
+  if (!ffmpegLoaded) {
+    try {
+      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd';
+      
+      console.log('Loading FFmpeg from CDN...');
+      
+      // Add timeout to prevent hanging
+      const loadPromise = ffmpegInstance.load({
+        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+      });
+      
+      // 60 second timeout for loading FFmpeg
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('FFmpeg load timeout after 60 seconds')), 60000)
+      );
+      
+      await Promise.race([loadPromise, timeoutPromise]);
+      
+      ffmpegLoaded = true;
+      console.log('FFmpeg loaded successfully');
+    } catch (error) {
+      console.error('Failed to load FFmpeg:', error);
+      // Reset instance so it can be retried
+      ffmpegInstance = null;
+      ffmpegLoaded = false;
+      throw error;
+    }
+  }
+  
+  return ffmpegInstance;
+}
+
+/**
+ * Convert WebM video to MP4 using FFmpeg with timeout
+ */
+async function convertWebMToMP4(webmBlob: Blob, onProgress?: (message: string) => void): Promise<Blob> {
+  const startTime = Date.now();
+  
+  try {
+    onProgress?.('Loading FFmpeg...');
+    console.log('Starting MP4 conversion, WebM size:', (webmBlob.size / 1024 / 1024).toFixed(2), 'MB');
+    
+    const ffmpeg = await loadFFmpeg();
+    
+    onProgress?.('Writing video file...');
+    console.log('Writing input file to FFmpeg...');
+    
+    // Write input file
+    await ffmpeg.writeFile('input.webm', await fetchFile(webmBlob));
+    
+    onProgress?.('Converting to MP4 format...');
+    console.log('Starting FFmpeg conversion...');
+    
+    // Convert to MP4 with high quality settings
+    const conversionPromise = ffmpeg.exec([
+      '-i', 'input.webm',
+      '-c:v', 'libx264',     // H.264 codec for video
+      '-preset', 'ultrafast', // Much faster encoding
+      '-crf', '23',          // Good quality (lower = better, but 18 was too slow)
+      '-c:a', 'aac',         // AAC codec for audio
+      '-b:a', '128k',        // 128kbps audio bitrate
+      '-movflags', '+faststart', // Enable streaming
+      'output.mp4'
+    ]);
+    
+    // Add timeout for conversion (2 minutes per MB of video)
+    const timeoutMs = Math.max(120000, (webmBlob.size / 1024 / 1024) * 120000);
+    console.log(`Conversion timeout set to ${(timeoutMs / 1000).toFixed(0)} seconds`);
+    
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error(`MP4 conversion timeout after ${(timeoutMs / 1000).toFixed(0)} seconds`)), timeoutMs)
+    );
+    
+    await Promise.race([conversionPromise, timeoutPromise]);
+    
+    console.log('Conversion complete, reading output file...');
+    
+    // Read output file
+    const data = await ffmpeg.readFile('output.mp4');
+    
+    console.log('Cleaning up temporary files...');
+    
+    // Clean up
+    try {
+      await ffmpeg.deleteFile('input.webm');
+      await ffmpeg.deleteFile('output.mp4');
+    } catch (cleanupError) {
+      console.warn('Cleanup error (non-critical):', cleanupError);
+    }
+    
+    // Convert to Blob
+    const mp4Blob = new Blob([data] as unknown as BlobPart[], { type: 'video/mp4' });
+    
+    const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(1);
+    const mp4Size = (mp4Blob.size / 1024 / 1024).toFixed(2);
+    console.log(`MP4 conversion successful in ${elapsedTime}s, output size: ${mp4Size} MB`);
+    
+    return mp4Blob;
+  } catch (error) {
+    const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(1);
+    console.error(`Error converting to MP4 after ${elapsedTime}s:`, error);
+    throw new Error(`Failed to convert to MP4: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
@@ -180,9 +312,8 @@ export async function addWatermarkToVideo(
     // Phase 2: Processing
     onProgress?.({ percent: 20, phase: 'processing' });
     
-    // Set up frame rate
+    // Set up frame rate - let canvas stream handle the FPS
     const fps = 30;
-    const frameDuration = 1000 / fps;
     
     // Create canvas stream for video
     const canvasStream = canvas.captureStream(fps);
@@ -259,15 +390,46 @@ export async function addWatermarkToVideo(
       // Handle recording stop
       mediaRecorder.onstop = async () => {
         try {
-          onProgress?.({ percent: 95, phase: 'finalizing' });
+          onProgress?.({ percent: 90, phase: 'finalizing' });
           
-          const watermarkedBlob = new Blob(chunks, { type: mimeType });
+          let finalBlob = new Blob(chunks, { type: mimeType });
+          
+          // Convert to MP4 if requested
+          if (opts.outputFormat === 'mp4') {
+            try {
+              console.log('Starting MP4 conversion...');
+              onProgress?.({ percent: 92, phase: 'finalizing' });
+              
+              finalBlob = await convertWebMToMP4(finalBlob, (msg) => {
+                console.log('FFmpeg progress:', msg);
+                onProgress?.({ percent: 95, phase: 'finalizing' });
+              });
+              
+              console.log('MP4 conversion complete');
+              onProgress?.({ percent: 98, phase: 'finalizing' });
+            } catch (convertError) {
+              console.error('MP4 conversion failed:', convertError);
+              console.warn('Keeping WebM format due to conversion error');
+              
+              // Show user-friendly error
+              if (convertError instanceof Error) {
+                if (convertError.message.includes('timeout')) {
+                  console.warn('Conversion took too long, using WebM instead');
+                } else if (convertError.message.includes('FFmpeg')) {
+                  console.warn('FFmpeg loading failed, using WebM instead');
+                }
+              }
+              
+              // Keep the WebM version if conversion fails
+              // User still gets watermarked video, just in WebM format
+            }
+          }
           
           // Cleanup
           cleanup();
           
           onProgress?.({ percent: 100, phase: 'finalizing' });
-          resolve(watermarkedBlob);
+          resolve(finalBlob);
         } catch (error) {
           cleanup();
           reject(error);
@@ -281,15 +443,15 @@ export async function addWatermarkToVideo(
         reject(new Error('Failed to record watermarked video'));
       };
       
-      // Start recording
-      mediaRecorder.start(100); // Collect data every 100ms
+      // Start recording with larger time slices for better stability with long videos
+      mediaRecorder.start(1000); // Collect data every 1 second (more stable for long videos)
       
       // Calculate total frames for progress tracking
       const totalFrames = Math.ceil((video.duration * fps));
       let frameCount = 0;
       let lastProgressUpdate = 0;
       
-      // Process video frames
+      // Process video frames - using requestAnimationFrame for smooth playback
       const processFrame = () => {
         if (video.paused || video.ended) {
           // Stop audio video if it exists
@@ -318,7 +480,7 @@ export async function addWatermarkToVideo(
         frameCount++;
         
         // Update progress (throttled to every 5%)
-        const currentProgress = 20 + Math.floor((frameCount / totalFrames) * 75);
+        const currentProgress = 20 + Math.floor((video.currentTime / video.duration) * 75);
         if (currentProgress >= lastProgressUpdate + 5) {
           lastProgressUpdate = currentProgress;
           onProgress?.({ 
@@ -329,8 +491,8 @@ export async function addWatermarkToVideo(
           });
         }
         
-        // Continue processing at consistent frame rate
-        setTimeout(() => requestAnimationFrame(processFrame), frameDuration);
+        // Continue processing - let the browser control timing for smoother playback
+        requestAnimationFrame(processFrame);
       };
       
       // Start both video elements for synchronized playback

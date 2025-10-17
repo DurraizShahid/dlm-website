@@ -569,7 +569,7 @@ ${application.idea_description}
       
       const videoFileName = application.video_url.split('/').pop() || 'video.mp4';
       const fileNameWithoutExt = videoFileName.split('.')[0];
-      const watermarkedFileName = `${fileNameWithoutExt}_watermarked.webm`;
+      const watermarkedFileName = `${fileNameWithoutExt}_watermarked.webm`; // Using WebM for reliability
       
       // Progress callback for real-time updates
       const onProgress = (progress: WatermarkProgress) => {
@@ -601,7 +601,8 @@ ${application.idea_description}
         position: 'top-left',
         opacity: 0.7,
         scale: 0.15,
-        margin: 20
+        margin: 20,
+        outputFormat: 'webm' // Using WebM for speed and reliability (change to 'mp4' if needed)
       };
       
       try {
