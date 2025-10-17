@@ -1194,7 +1194,7 @@ ${application.idea_description}
                                 className="text-blue-600 hover:text-blue-700"
                               >
                                 <Download className="h-3 w-3 mr-1" />
-                                Download Copy of Video
+                                Download Watermarked Video
                               </Button>
 
                             </div>

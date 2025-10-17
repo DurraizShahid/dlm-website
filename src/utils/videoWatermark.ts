@@ -7,6 +7,8 @@
 
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
+import { PerformanceMonitor, checkBrowserCapabilities } from './performanceMonitor';
+import { withTimeout } from './errorRecovery';
 
 export interface WatermarkOptions {
   position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center';
@@ -226,23 +228,28 @@ function createVideoElement(url: string): Promise<HTMLVideoElement> {
 }
 
 /**
- * Get the best supported MIME type for recording
+ * Get the best supported MIME type for recording with quality preferences
  */
 function getBestMimeType(): string {
+  // Prioritize codecs by quality and compatibility
   const types = [
-    'video/webm;codecs=h264,opus',
-    'video/webm;codecs=vp9,opus',
-    'video/webm;codecs=vp8,opus',
-    'video/webm;codecs=h264',
-    'video/webm'
+    'video/webm;codecs=h264,opus',      // Best quality, good compatibility
+    'video/webm;codecs=vp9,opus',       // Excellent quality, modern browsers
+    'video/webm;codecs=vp8,opus',       // Good quality, universal support
+    'video/webm;codecs=h264',           // H264 without audio codec specified
+    'video/webm;codecs=vp9',            // VP9 without audio codec specified
+    'video/webm;codecs=vp8',            // VP8 without audio codec specified
+    'video/webm'                         // Fallback
   ];
   
   for (const type of types) {
     if (MediaRecorder.isTypeSupported(type)) {
+      console.log(`Selected MIME type: ${type}`);
       return type;
     }
   }
   
+  console.warn('No preferred MIME types supported, using default video/webm');
   return 'video/webm';
 }
 
@@ -261,21 +268,48 @@ export async function addWatermarkToVideo(
 ): Promise<Blob> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   
+  // Validate input
+  if (!videoUrl || videoUrl.trim() === '') {
+    throw new Error('Video URL is required');
+  }
+  
+  console.log('=== Starting Video Watermarking ===');
+  console.log('Options:', opts);
+  
+  // Check browser capabilities
+  const capabilities = checkBrowserCapabilities();
+  if (!capabilities.supported) {
+    throw new Error(`Browser not supported for watermarking. Issues: ${capabilities.warnings.join(', ')}`);
+  }
+  
+  if (capabilities.warnings.length > 0) {
+    console.warn('Browser capability warnings:', capabilities.warnings);
+  }
+  
+  // Start performance monitoring
+  const perfMonitor = new PerformanceMonitor('Video Watermarking');
+  
   // Resources to cleanup
   const resources: Array<HTMLVideoElement | HTMLCanvasElement | MediaStream> = [];
   
   try {
     // Phase 1: Loading
     onProgress?.({ percent: 0, phase: 'loading' });
+    perfMonitor.checkpoint('Start loading');
     
-    // Load watermark and video in parallel
-    const [watermark, video] = await Promise.all([
-      loadImage(opts.watermarkUrl),
-      createVideoElement(videoUrl)
-    ]);
+    // Load watermark and video in parallel with timeout
+    const [watermark, video] = await withTimeout(
+      Promise.all([
+        loadImage(opts.watermarkUrl),
+        createVideoElement(videoUrl)
+      ]),
+      30000, // 30 second timeout for loading
+      'Failed to load video or watermark within 30 seconds'
+    );
     
     resources.push(video);
     
+    perfMonitor.checkpoint('Video and watermark loaded');
     onProgress?.({ percent: 10, phase: 'loading' });
     
     // Create canvas for frame processing
@@ -287,11 +321,28 @@ export async function addWatermarkToVideo(
     
     const ctx = canvas.getContext('2d', {
       alpha: false, // No alpha channel for better performance
-      desynchronized: true // Allow faster rendering
+      desynchronized: true, // Allow faster rendering
+      willReadFrequently: false // Optimize for write-heavy operations
     });
     
     if (!ctx) {
       throw new Error('Could not get canvas context');
+    }
+    
+    // Enable image smoothing for better quality
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    
+    // Log video information
+    console.log(`Video info: ${canvas.width}x${canvas.height}, ${video.duration.toFixed(2)}s`);
+    
+    // Validate video is playable
+    if (video.duration <= 0 || isNaN(video.duration) || !isFinite(video.duration)) {
+      throw new Error('Invalid video duration');
+    }
+    
+    if (canvas.width <= 0 || canvas.height <= 0) {
+      throw new Error('Invalid video dimensions');
     }
     
     // Calculate watermark dimensions
@@ -308,6 +359,8 @@ export async function addWatermarkToVideo(
       opts.position,
       opts.margin
     );
+    
+    perfMonitor.checkpoint('Canvas setup complete');
     
     // Phase 2: Processing
     onProgress?.({ percent: 20, phase: 'processing' });
@@ -368,15 +421,39 @@ export async function addWatermarkToVideo(
     
     console.log(`Recording with ${combinedStream.getVideoTracks().length} video track(s) and ${combinedStream.getAudioTracks().length} audio track(s)`);
     
-    // Set up MediaRecorder with high quality settings
+    perfMonitor.checkpoint('Audio extraction complete');
+    
+    // Set up MediaRecorder with optimized settings
     const mimeType = getBestMimeType();
+    
+    // Intelligent bitrate calculation based on resolution
+    const pixelCount = canvas.width * canvas.height;
+    let videoBitrate: number;
+    
+    if (pixelCount > 1920 * 1080) {
+      // 4K or higher
+      videoBitrate = 15000000; // 15 Mbps
+    } else if (pixelCount > 1280 * 720) {
+      // 1080p
+      videoBitrate = 10000000; // 10 Mbps
+    } else if (pixelCount > 854 * 480) {
+      // 720p
+      videoBitrate = 6000000; // 6 Mbps
+    } else {
+      // SD or lower
+      videoBitrate = 4000000; // 4 Mbps
+    }
+    
+    console.log(`Using ${(videoBitrate / 1000000).toFixed(1)} Mbps video bitrate for ${canvas.width}x${canvas.height} (${pixelCount.toLocaleString()} pixels)`);
+    
     const mediaRecorder = new MediaRecorder(combinedStream, {
       mimeType: mimeType,
-      videoBitsPerSecond: 8000000, // 8 Mbps for high quality
+      videoBitsPerSecond: videoBitrate,
       audioBitsPerSecond: 128000 // 128 kbps audio
     });
     
     const chunks: Blob[] = [];
+    let processingStartTime = Date.now();
     
     // Return a promise that resolves when recording is complete
     return new Promise((resolve, reject) => {
@@ -390,9 +467,14 @@ export async function addWatermarkToVideo(
       // Handle recording stop
       mediaRecorder.onstop = async () => {
         try {
+          const processingTime = ((Date.now() - processingStartTime) / 1000).toFixed(1);
+          console.log(`Video processing completed in ${processingTime}s`);
+          
           onProgress?.({ percent: 90, phase: 'finalizing' });
           
           let finalBlob = new Blob(chunks, { type: mimeType });
+          const webmSize = (finalBlob.size / 1024 / 1024).toFixed(2);
+          console.log(`Watermarked video size: ${webmSize} MB`);
           
           // Convert to MP4 if requested
           if (opts.outputFormat === 'mp4') {
@@ -405,7 +487,8 @@ export async function addWatermarkToVideo(
                 onProgress?.({ percent: 95, phase: 'finalizing' });
               });
               
-              console.log('MP4 conversion complete');
+              const mp4Size = (finalBlob.size / 1024 / 1024).toFixed(2);
+              console.log(`MP4 conversion complete, size: ${mp4Size} MB`);
               onProgress?.({ percent: 98, phase: 'finalizing' });
             } catch (convertError) {
               console.error('MP4 conversion failed:', convertError);
@@ -428,6 +511,14 @@ export async function addWatermarkToVideo(
           // Cleanup
           cleanup();
           
+          perfMonitor.checkpoint('Cleanup complete');
+          const totalTime = perfMonitor.end();
+          
+          console.log(`=== Watermarking Complete ===`);
+          console.log(`Total time: ${(totalTime / 1000).toFixed(1)}s`);
+          console.log(`Output size: ${(finalBlob.size / 1024 / 1024).toFixed(2)} MB`);
+          console.log(`Output format: ${finalBlob.type}`);
+          
           onProgress?.({ percent: 100, phase: 'finalizing' });
           resolve(finalBlob);
         } catch (error) {
@@ -446,41 +537,71 @@ export async function addWatermarkToVideo(
       // Start recording with larger time slices for better stability with long videos
       mediaRecorder.start(1000); // Collect data every 1 second (more stable for long videos)
       
-      // Calculate total frames for progress tracking
-      const totalFrames = Math.ceil((video.duration * fps));
+      // More accurate frame count estimation
+      let totalFrames = Math.ceil(video.duration * fps);
       let frameCount = 0;
       let lastProgressUpdate = 0;
+      let videoEnded = false;
       
       // Process video frames - using requestAnimationFrame for smooth playback
       const processFrame = () => {
-        if (video.paused || video.ended) {
+        // Check if video has ended
+        if (video.ended || videoEnded) {
+          console.log(`Video ended. Processed ${frameCount} frames (estimated: ${totalFrames})`);
+          
           // Stop audio video if it exists
           const audioVideo = resources.find(r => r instanceof HTMLVideoElement && r !== video) as HTMLVideoElement | undefined;
           if (audioVideo) {
             audioVideo.pause();
           }
+          
+          videoEnded = true;
           mediaRecorder.stop();
           return;
         }
         
-        // Draw video frame to canvas
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        // Also check if video is paused (shouldn't happen but safety check)
+        if (video.paused && !videoEnded) {
+          console.warn('Video paused unexpectedly, attempting to resume...');
+          video.play().catch(err => {
+            console.error('Failed to resume video:', err);
+            videoEnded = true;
+            mediaRecorder.stop();
+          });
+        }
         
-        // Add watermark overlay
-        ctx.globalAlpha = opts.opacity;
-        ctx.drawImage(
-          watermark,
-          watermarkPos.x,
-          watermarkPos.y,
-          watermarkWidth,
-          watermarkHeight
-        );
-        ctx.globalAlpha = 1.0;
+        // Draw video frame to canvas
+        try {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          
+          // Add watermark overlay
+          ctx.globalAlpha = opts.opacity;
+          ctx.drawImage(
+            watermark,
+            watermarkPos.x,
+            watermarkPos.y,
+            watermarkWidth,
+            watermarkHeight
+          );
+          ctx.globalAlpha = 1.0;
+        } catch (drawError) {
+          console.error('Error drawing frame:', drawError);
+          // Continue anyway, this frame will be skipped
+        }
         
         frameCount++;
         
+        // Update estimated total frames based on actual progress
+        if (video.currentTime > 0 && frameCount > fps) {
+          // Recalculate based on actual frame rate
+          const actualFps = frameCount / video.currentTime;
+          totalFrames = Math.ceil(video.duration * actualFps);
+        }
+        
         // Update progress (throttled to every 5%)
-        const currentProgress = 20 + Math.floor((video.currentTime / video.duration) * 75);
+        const videoProgress = Math.min(video.currentTime / video.duration, 1.0);
+        const currentProgress = 20 + Math.floor(videoProgress * 70);
+        
         if (currentProgress >= lastProgressUpdate + 5) {
           lastProgressUpdate = currentProgress;
           onProgress?.({ 
@@ -519,11 +640,17 @@ export async function addWatermarkToVideo(
           reject(new Error(`Failed to play video: ${error.message}`));
         });
       
-      // Safety timeout: stop after video duration + 5 seconds
-      const maxDuration = (video.duration * 1000) + 5000;
-      setTimeout(() => {
-        if (mediaRecorder.state !== 'inactive') {
-          console.warn('Watermarking timed out, stopping recording');
+      // Safety timeout: stop after video duration + buffer (10% extra or min 10 seconds)
+      const bufferTime = Math.max(10000, video.duration * 1000 * 0.1);
+      const maxDuration = (video.duration * 1000) + bufferTime;
+      
+      console.log(`Safety timeout set to ${(maxDuration / 1000).toFixed(1)}s (video: ${video.duration.toFixed(1)}s + ${(bufferTime / 1000).toFixed(1)}s buffer)`);
+      
+      const safetyTimeout = setTimeout(() => {
+        if (mediaRecorder.state !== 'inactive' && !videoEnded) {
+          console.warn(`Safety timeout triggered after ${(maxDuration / 1000).toFixed(1)}s`);
+          console.warn(`Processed ${frameCount} frames, video time: ${video.currentTime.toFixed(2)}s / ${video.duration.toFixed(2)}s`);
+          
           video.pause();
           
           // Stop audio video if it exists
@@ -532,9 +659,17 @@ export async function addWatermarkToVideo(
             audioVideo.pause();
           }
           
+          videoEnded = true;
           mediaRecorder.stop();
         }
       }, maxDuration);
+      
+      // Clear timeout when video ends naturally
+      const originalStop = mediaRecorder.stop.bind(mediaRecorder);
+      mediaRecorder.stop = () => {
+        clearTimeout(safetyTimeout);
+        originalStop();
+      };
     });
     
   } catch (error) {
