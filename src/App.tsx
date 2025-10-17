@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import About from "./pages/About";
 import HowItWorks from "./pages/HowItWorks";
 import FAQ from "./pages/FAQ";
+import Academy from "./pages/Academy";
 import Apply from "./pages/Apply";
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
@@ -30,6 +31,7 @@ const AppContent = () => {
         <Route path="/about" element={<About />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/faq" element={<FAQ />} />
+        <Route path="/academy" element={<Academy />} />
         <Route path="/apply" element={<Apply />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/admin" element={<Admin />} />

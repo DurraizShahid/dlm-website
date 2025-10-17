@@ -20,6 +20,7 @@ const Navbar = () => {
     { name: translate("Home"), path: "/" },
     { name: translate("About"), path: "/about" },
     { name: translate("How It Works"), path: "/how-it-works" },
+    { name: translate("Academy"), path: "/academy" },
     { name: translate("FAQ"), path: "/faq" },
     { name: translate("Apply"), path: "/apply" },
     { name: translate("Dashboard"), path: "/dashboard" },

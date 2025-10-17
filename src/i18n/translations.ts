@@ -269,7 +269,34 @@ export const translations = {
   // Additional UserDashboard translations
   "Error loading your applications": { en: "Error loading your applications", ur: "آپ کی درخواستیں لوڈ کرنے میں خرابی" },
   "Error loading dashboard data": { en: "Error loading dashboard data", ur: "ڈیش بورڈ ڈیٹا لوڈ کرنے میں خرابی" },
-  "Back to Home": { en: "Back to Home", ur: "واپس گھر" }
+  "Back to Home": { en: "Back to Home", ur: "واپس گھر" },
+  
+  // Academy page translations
+  "Academy": { en: "Academy", ur: "اکیڈمی" },
+  "DLM Academy": { en: "DLM Academy", ur: "ڈی ایل ایم اکیڈمی" },
+  "Learn, Grow, and Transform Your Business Ideas into Reality": { en: "Learn, Grow, and Transform Your Business Ideas into Reality", ur: "سیکھیں، بڑھیں، اور اپنے کاروباری خیالات کو حقیقت میں بدلیں" },
+  "More than just a competition, DLM is a complete learning ecosystem. We provide expert guidebooks, mentorship, and resources to help you become a better entrepreneur and bring your ideas to life.": { en: "More than just a competition, DLM is a complete learning ecosystem. We provide expert guidebooks, mentorship, and resources to help you become a better entrepreneur and bring your ideas to life.", ur: "صرف ایک مقابلہ نہیں، ڈی ایل ایم ایک مکمل سیکھنے کا نظام ہے۔ ہم ماہر گائیڈ بکس، رہنمائی، اور وسائل فراہم کرتے ہیں تاکہ آپ ایک بہتر کاروباری بن سکیں اور اپنے خیالات کو زندہ کر سکیں۔" },
+  "What You'll Learn": { en: "What You'll Learn", ur: "آپ کیا سیکھیں گے" },
+  "Access world-class business education designed specifically for Pakistani entrepreneurs": { en: "Access world-class business education designed specifically for Pakistani entrepreneurs", ur: "پاکستانی کاروباری افراد کے لیے خاص طور پر تیار کی گئی عالمی معیار کی کاروباری تعلیم تک رسائی حاصل کریں" },
+  "Our Guidebook Collection": { en: "Our Guidebook Collection", ur: "ہماری گائیڈ بک کلیکشن" },
+  "Comprehensive guides covering every aspect of building and growing a successful business": { en: "Comprehensive guides covering every aspect of building and growing a successful business", ur: "کامیاب کاروبار بنانے اور بڑھانے کے ہر پہلو کو شامل کرنے والی جامع گائیڈز" },
+  "...and many more resources available when you join!": { en: "...and many more resources available when you join!", ur: "...اور جب آپ شامل ہوں گے تو بہت سے وسائل دستیاب ہیں!" },
+  "How to Access Academy Resources": { en: "How to Access Academy Resources", ur: "اکیڈمی کے وسائل تک کیسے رسائی حاصل کریں" },
+  "Submit Your Application": { en: "Submit Your Application", ur: "اپنی درخواست جمع کریں" },
+  "Start by submitting your business idea through our application form. It's quick, simple, and completely free to apply.": { en: "Start by submitting your business idea through our application form. It's quick, simple, and completely free to apply.", ur: "ہماری درخواست فارم کے ذریعے اپنے کاروباری خیال کو جمع کر کے شروع کریں۔ یہ تیز، آسان، اور درخواست دینا بالکل مفت ہے۔" },
+  "Get Approved or Make Payment": { en: "Get Approved or Make Payment", ur: "منظور شدہ حاصل کریں یا ادائیگی کریں" },
+  "Once your application is reviewed and approved, or after completing the registration payment, you unlock full access to all learning resources.": { en: "Once your application is reviewed and approved, or after completing the registration payment, you unlock full access to all learning resources.", ur: "جب آپ کی درخواست کا جائزہ لیا جائے اور منظور کیا جائے، یا رجسٹریشن کی ادائیگی مکمل کرنے کے بعد، آپ تمام سیکھنے کے وسائل تک مکمل رسائی کھول دیتے ہیں۔" },
+  "Access Your Dashboard": { en: "Access Your Dashboard", ur: "اپنے ڈیش بورڈ تک رسائی حاصل کریں" },
+  "Log into your personal dashboard to download guidebooks, track your progress, and access exclusive content.": { en: "Log into your personal dashboard to download guidebooks, track your progress, and access exclusive content.", ur: "گائیڈ بکس ڈاؤن لوڈ کرنے، اپنی پیش رفت کو ٹریک کرنے، اور خصوصی مواد تک رسائی کے لیے اپنے ذاتی ڈیش بورڈ میں لاگ ان کریں۔" },
+  "Some Resources Are Free!": { en: "Some Resources Are Free!", ur: "کچھ وسائل مفت ہیں!" },
+  "We believe in giving everyone a head start. That's why select guidebooks are available for free to all visitors, even before you apply.": { en: "We believe in giving everyone a head start. That's why select guidebooks are available for free to all visitors, even before you apply.", ur: "ہم یقین رکھتے ہیں کہ ہر کسی کو شروعات ملنی چاہیے۔ اس لیے منتخب گائیڈ بکس تمام زائرین کے لیے مفت دستیاب ہیں، درخواست دینے سے پہلے بھی۔" },
+  "Browse Free Resources": { en: "Browse Free Resources", ur: "مفت وسائل براؤز کریں" },
+  "Ready to Start Your Learning Journey?": { en: "Ready to Start Your Learning Journey?", ur: "اپنے سیکھنے کے سفر کو شروع کرنے کے لیے تیار ہیں؟" },
+  "What Happens After You Apply:": { en: "What Happens After You Apply:", ur: "درخواست کے بعد کیا ہوتا ہے:" },
+  "Apply Now & Start Learning": { en: "Apply Now & Start Learning", ur: "ابھی درخواست دیں اور سیکھنا شروع کریں" },
+  "View Free Resources": { en: "View Free Resources", ur: "مفت وسائل دیکھیں" },
+  "It's More Than Just Funding": { en: "It's More Than Just Funding", ur: "یہ صرف فنڈنگ سے زیادہ ہے" },
+  "Transform yourself while transforming your business": { en: "Transform yourself while transforming your business", ur: "اپنے کاروبار کو تبدیل کرتے وقت اپنے آپ کو بھی تبدیل کریں" }
 };
 
 export type TranslationKeys = keyof typeof translations;
