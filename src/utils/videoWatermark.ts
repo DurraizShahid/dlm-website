@@ -9,6 +9,13 @@ import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
 import { PerformanceMonitor, checkBrowserCapabilities } from './performanceMonitor';
 import { withTimeout } from './errorRecovery';
+import { 
+  checkMemoryPressure, 
+  ChunkManager, 
+  loadResourceWithRetry,
+  detectVideoCorruption,
+  createVisibilityHandler
+} from './videoWatermarkEnhanced';
 
 export interface WatermarkOptions {
   position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center';
@@ -286,30 +293,53 @@ export async function addWatermarkToVideo(
     console.warn('Browser capability warnings:', capabilities.warnings);
   }
   
+  // Check memory before starting
+  const memoryCheck = await checkMemoryPressure();
+  if (!memoryCheck.canProceed) {
+    throw new Error('Insufficient memory available for watermarking. Please close other tabs and try again.');
+  }
+  
+  if (memoryCheck.warningLevel === 'medium') {
+    console.warn('[Memory] Medium memory pressure detected. Processing may be slower.');
+  }
+  
   // Start performance monitoring
   const perfMonitor = new PerformanceMonitor('Video Watermarking');
   
   // Resources to cleanup
   const resources: Array<HTMLVideoElement | HTMLCanvasElement | MediaStream> = [];
+  let visibilityCleanup: (() => void) | null = null;
   
   try {
     // Phase 1: Loading
     onProgress?.({ percent: 0, phase: 'loading' });
     perfMonitor.checkpoint('Start loading');
     
-    // Load watermark and video in parallel with timeout
-    const [watermark, video] = await withTimeout(
+    // Load watermark and video with retry logic for network resilience
+    const [watermarkElement, videoElement] = await withTimeout(
       Promise.all([
-        loadImage(opts.watermarkUrl),
-        createVideoElement(videoUrl)
+        loadResourceWithRetry(opts.watermarkUrl, 'image', 3),
+        loadResourceWithRetry(videoUrl, 'video', 3)
       ]),
-      30000, // 30 second timeout for loading
-      'Failed to load video or watermark within 30 seconds'
+      45000, // 45 second timeout (increased for retries)
+      'Failed to load video or watermark after multiple retries'
     );
+    
+    // Type assertion for proper typing
+    const watermark = watermarkElement as HTMLImageElement;
+    const video = videoElement as HTMLVideoElement;
     
     resources.push(video);
     
     perfMonitor.checkpoint('Video and watermark loaded');
+    
+    // Detect potential video corruption
+    const corruptionCheck = await detectVideoCorruption(video);
+    if (corruptionCheck.isCorrupted) {
+      console.warn('[Corruption Check] Potential issues detected:', corruptionCheck.issues);
+      // Continue anyway, but log warning
+    }
+    
     onProgress?.({ percent: 10, phase: 'loading' });
     
     // Create canvas for frame processing
@@ -452,15 +482,26 @@ export async function addWatermarkToVideo(
       audioBitsPerSecond: 128000 // 128 kbps audio
     });
     
-    const chunks: Blob[] = [];
+    // Use chunk manager for better memory handling
+    const chunkManager = new ChunkManager();
     let processingStartTime = Date.now();
+    let isPaused = false;
     
     // Return a promise that resolves when recording is complete
     return new Promise((resolve, reject) => {
-      // Handle recorded data
+      // Handle recorded data with chunk manager
       mediaRecorder.ondataavailable = (e) => {
         if (e.data && e.data.size > 0) {
-          chunks.push(e.data);
+          chunkManager.addChunk(e.data);
+          
+          // Periodic memory check during long recordings
+          if (chunkManager.getStats().chunkCount % 10 === 0) {
+            checkMemoryPressure().then(memCheck => {
+              if (memCheck.warningLevel === 'high') {
+                console.warn('[Memory] High memory usage during recording');
+              }
+            });
+          }
         }
       };
       
@@ -472,9 +513,14 @@ export async function addWatermarkToVideo(
           
           onProgress?.({ percent: 90, phase: 'finalizing' });
           
-          let finalBlob = new Blob(chunks, { type: mimeType });
+          // Get final blob from chunk manager
+          let finalBlob = chunkManager.getBlob(mimeType);
           const webmSize = (finalBlob.size / 1024 / 1024).toFixed(2);
           console.log(`Watermarked video size: ${webmSize} MB`);
+          
+          // Log chunk statistics
+          const stats = chunkManager.getStats();
+          console.log(`Chunk stats: ${stats.chunkCount} chunks, avg size: ${(stats.averageChunkSize / 1024).toFixed(1)}KB`);
           
           // Convert to MP4 if requested
           if (opts.outputFormat === 'mp4') {
@@ -534,6 +580,30 @@ export async function addWatermarkToVideo(
         reject(new Error('Failed to record watermarked video'));
       };
       
+      // Set up tab visibility handling (pause processing if tab is hidden)
+      visibilityCleanup = createVisibilityHandler(
+        () => {
+          // Tab hidden - pause to save resources
+          if (!isPaused && !videoEnded) {
+            console.log('[Visibility] Pausing processing while tab is hidden');
+            isPaused = true;
+            video.pause();
+            const audioVideo = resources.find(r => r instanceof HTMLVideoElement && r !== video) as HTMLVideoElement | undefined;
+            if (audioVideo) audioVideo.pause();
+          }
+        },
+        () => {
+          // Tab visible - resume
+          if (isPaused && !videoEnded) {
+            console.log('[Visibility] Resuming processing as tab is now visible');
+            isPaused = false;
+            video.play();
+            const audioVideo = resources.find(r => r instanceof HTMLVideoElement && r !== video) as HTMLVideoElement | undefined;
+            if (audioVideo) audioVideo.play();
+          }
+        }
+      );
+      
       // Start recording with larger time slices for better stability with long videos
       mediaRecorder.start(1000); // Collect data every 1 second (more stable for long videos)
       
@@ -542,12 +612,23 @@ export async function addWatermarkToVideo(
       let frameCount = 0;
       let lastProgressUpdate = 0;
       let videoEnded = false;
+      let framesSkipped = 0;
       
       // Process video frames - using requestAnimationFrame for smooth playback
       const processFrame = () => {
         // Check if video has ended
         if (video.ended || videoEnded) {
           console.log(`Video ended. Processed ${frameCount} frames (estimated: ${totalFrames})`);
+          
+          // Log quality metrics
+          if (framesSkipped > 0) {
+            console.log(`Quality: ${framesSkipped} frames skipped (${((framesSkipped / frameCount) * 100).toFixed(2)}%)`);
+          } else {
+            console.log('Quality: Perfect - 0 frames skipped');
+          }
+          
+          const actualFps = frameCount / video.duration;
+          console.log(`Average FPS: ${actualFps.toFixed(2)} (target: ${fps})`);
           
           // Stop audio video if it exists
           const audioVideo = resources.find(r => r instanceof HTMLVideoElement && r !== video) as HTMLVideoElement | undefined;
@@ -572,19 +653,29 @@ export async function addWatermarkToVideo(
         
         // Draw video frame to canvas
         try {
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          
-          // Add watermark overlay
-          ctx.globalAlpha = opts.opacity;
-          ctx.drawImage(
-            watermark,
-            watermarkPos.x,
-            watermarkPos.y,
-            watermarkWidth,
-            watermarkHeight
-          );
-          ctx.globalAlpha = 1.0;
+          // Check if video has valid frame data
+          if (video.readyState >= video.HAVE_CURRENT_DATA) {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Add watermark overlay
+            ctx.globalAlpha = opts.opacity;
+            ctx.drawImage(
+              watermark,
+              watermarkPos.x,
+              watermarkPos.y,
+              watermarkWidth,
+              watermarkHeight
+            );
+            ctx.globalAlpha = 1.0;
+          } else {
+            // Frame not ready, skip this frame
+            framesSkipped++;
+            if (framesSkipped % 30 === 0) {
+              console.warn(`[Frame Skip] Skipped ${framesSkipped} frames due to video not ready`);
+            }
+          }
         } catch (drawError) {
+          framesSkipped++;
           console.error('Error drawing frame:', drawError);
           // Continue anyway, this frame will be skipped
         }
@@ -610,6 +701,11 @@ export async function addWatermarkToVideo(
             currentFrame: frameCount,
             totalFrames: totalFrames
           });
+          
+          // Log frame skip warning if too many frames skipped
+          if (framesSkipped > frameCount * 0.1 && frameCount > 100) {
+            console.warn(`[Frame Quality] ${framesSkipped} frames skipped (${((framesSkipped / frameCount) * 100).toFixed(1)}%)`);
+          }
         }
         
         // Continue processing - let the browser control timing for smoother playback
@@ -679,23 +775,39 @@ export async function addWatermarkToVideo(
   
   // Cleanup function to prevent memory leaks
   function cleanup() {
-    resources.forEach(resource => {
+    console.log('[Cleanup] Starting resource cleanup...');
+    
+    // Remove visibility handler
+    if (visibilityCleanup) {
+      visibilityCleanup();
+      visibilityCleanup = null;
+    }
+    
+    // Cleanup all tracked resources
+    resources.forEach((resource, index) => {
       try {
         if ('pause' in resource && typeof resource.pause === 'function') {
           resource.pause();
         }
         if ('getTracks' in resource && typeof resource.getTracks === 'function') {
-          resource.getTracks().forEach(track => track.stop());
+          resource.getTracks().forEach(track => {
+            if (track.readyState !== 'ended') {
+              track.stop();
+            }
+          });
         }
         if ('src' in resource) {
           resource.src = '';
+          resource.load && resource.load(); // Force release
         }
       } catch (e) {
-        // Ignore cleanup errors
-        console.warn('Error during cleanup:', e);
+        // Ignore cleanup errors but log them
+        console.warn(`[Cleanup] Error cleaning resource ${index}:`, e);
       }
     });
+    
     resources.length = 0;
+    console.log('[Cleanup] All resources cleaned up');
   }
 }
 
