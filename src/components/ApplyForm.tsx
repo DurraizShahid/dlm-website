@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,29 @@ import { Upload, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 // Note: Watermarking is handled by admin when downloading videos
 
+// Detect TikTok's in-app browser
+const isTikTokBrowser = () => {
+  const ua = navigator.userAgent || navigator.vendor || (window as any).opera;
+  return /BytedanceWebview|musical_ly|TikTok/i.test(ua);
+};
+
+// Function to open current page in external browser
+const openInExternalBrowser = () => {
+  const url = window.location.href;
+  const message = 'Please open this link in your browser (Chrome/Safari) to upload files.';
+  
+  // Try to copy URL to clipboard
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => {
+      alert(`${message}\n\nURL copied to clipboard: ${url}`);
+    }).catch(() => {
+      alert(`${message}\n\nPlease copy this URL: ${url}`);
+    });
+  } else {
+    alert(`${message}\n\nPlease copy this URL: ${url}`);
+  }
+};
+
 const ApplyForm = () => {
   const { language } = useLanguage();
   const navigate = useNavigate();
@@ -41,6 +65,7 @@ const ApplyForm = () => {
   const [existingCnicData, setExistingCnicData] = useState<any>(null);
   const [pendingFormData, setPendingFormData] = useState<ApplyFormData | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isTikTok, setIsTikTok] = useState(false);
 
   const translate = (key: keyof typeof translations) => {
     return translations[key]?.[language] || translations[key]?.en || key;
@@ -276,6 +301,15 @@ const ApplyForm = () => {
   useEffect(() => {
     console.log('showPaymentModal state changed to:', showPaymentModal);
   }, [showPaymentModal]);
+
+  // Detect TikTok browser on mount
+  useEffect(() => {
+    const detected = isTikTokBrowser();
+    setIsTikTok(detected);
+    if (detected) {
+      console.log('TikTok in-app browser detected');
+    }
+  }, []);
   
   // Test function to manually trigger the modal
   const testShowModal = () => {
@@ -570,17 +604,39 @@ const ApplyForm = () => {
                         {translate('Upload a short video (max 2 minutes). Tell us your idea and why you deserve to win. Accept: .mp4, .mov, .avi (max 200MB)')}
                       </FormDescription>
                       
+                      {/* TikTok Browser Warning */}
+                      {isTikTok && (
+                        <Alert className="mb-4 bg-amber-50 border-amber-300">
+                          <AlertCircle className="h-4 w-4 text-amber-600" />
+                          <AlertDescription className="text-amber-800">
+                            <p className="font-semibold mb-2">
+                              ⚠️ {translate('File uploads don\'t work in TikTok\'s browser')}
+                            </p>
+                            <p className="text-sm mb-3">
+                              {translate('TikTok\'s app blocks file uploads for security. Please open this page in your phone\'s browser (Chrome/Safari) to upload your video.')}
+                            </p>
+                            <Button
+                              type="button"
+                              onClick={openInExternalBrowser}
+                              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                            >
+                              🌐 {translate('Copy Link & Open in Browser')}
+                            </Button>
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                      
                       {!uploadedVideoUrl ? (
-                        <div>
+                        <div className={isTikTok ? 'opacity-50 pointer-events-none' : ''}>
                           {/* Hidden file input - works better when not using programmatic clicks */}
                           <input
                             type="file"
                             accept="video/mp4,video/quicktime,video/x-msvideo,video/webm,video/*"
-                            capture="environment"
                             onChange={handleVideoChange}
                             className="hidden"
                             id="video-upload"
                             multiple={false}
+                            disabled={isTikTok}
                           />
                           
                           {/* Label acts as the clickable area - works in all browsers including embedded ones */}
@@ -624,26 +680,27 @@ const ApplyForm = () => {
                           </label>
                           
                           {/* Alternative direct button for problematic browsers */}
-                          <div className="mt-2 text-center">
-                            <p className="text-xs text-gray-500 mb-2">
-                              {translate('Having trouble? Try the button below:')}
-                            </p>
-                            <label 
-                              htmlFor="video-upload-alt"
-                              className="inline-flex items-center justify-center px-4 py-2 border-2 border-blue-500 rounded-md shadow-sm text-sm font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer"
-                            >
-                              📹 {translate('Select Video File')}
-                            </label>
-                            <input
-                              type="file"
-                              accept="video/*"
-                              capture="environment"
-                              onChange={handleVideoChange}
-                              className="hidden"
-                              id="video-upload-alt"
-                              multiple={false}
-                            />
-                          </div>
+                          {!isTikTok && (
+                            <div className="mt-2 text-center">
+                              <p className="text-xs text-gray-500 mb-2">
+                                {translate('Having trouble? Try the button below:')}
+                              </p>
+                              <label 
+                                htmlFor="video-upload-alt"
+                                className="inline-flex items-center justify-center px-4 py-2 border-2 border-blue-500 rounded-md shadow-sm text-sm font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer"
+                              >
+                                📹 {translate('Select Video File')}
+                              </label>
+                              <input
+                                type="file"
+                                accept="video/*"
+                                onChange={handleVideoChange}
+                                className="hidden"
+                                id="video-upload-alt"
+                                multiple={false}
+                              />
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div className="border-2 border-green-200 rounded-lg p-4 bg-green-50">
