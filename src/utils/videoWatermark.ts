@@ -184,26 +184,54 @@ export async function addWatermarkToVideo(
     const fps = 30;
     const frameDuration = 1000 / fps;
     
-    // Create canvas stream
+    // Create canvas stream for video
     const canvasStream = canvas.captureStream(fps);
     resources.push(canvasStream);
     
-    // Get audio track from original video
-    const audioContext = new AudioContext();
-    const source = audioContext.createMediaElementSource(video);
-    const destination = audioContext.createMediaStreamDestination();
-    source.connect(destination);
-    
-    // Create combined stream with video and audio
+    // Create combined stream
     const combinedStream = new MediaStream();
+    
+    // Add video track from canvas
     const videoTrack = canvasStream.getVideoTracks()[0];
     if (videoTrack) {
       combinedStream.addTrack(videoTrack);
     }
     
-    // Add audio tracks from destination
-    const audioTracks = destination.stream.getAudioTracks();
-    audioTracks.forEach(track => combinedStream.addTrack(track));
+    // Extract audio using captureStream (more reliable than Web Audio API for this use case)
+    try {
+      // Create a separate video element for audio extraction to avoid conflicts
+      const audioVideo = document.createElement('video');
+      audioVideo.src = videoUrl;
+      audioVideo.crossOrigin = 'anonymous';
+      audioVideo.muted = false; // Must NOT be muted to capture audio
+      audioVideo.volume = 0; // But set volume to 0 so we don't hear it during processing
+      
+      resources.push(audioVideo);
+      
+      // Wait for audio video to be ready
+      await new Promise<void>((resolve) => {
+        audioVideo.addEventListener('loadedmetadata', () => resolve(), { once: true });
+      });
+      
+      // Capture audio stream from the video
+      // @ts-ignore - captureStream may not be in all TypeScript definitions
+      const audioStream = audioVideo.captureStream ? audioVideo.captureStream() : audioVideo.mozCaptureStream();
+      
+      if (audioStream) {
+        const audioTracks = audioStream.getAudioTracks();
+        
+        if (audioTracks.length > 0) {
+          // Add the first audio track to combined stream
+          combinedStream.addTrack(audioTracks[0]);
+          console.log(`Successfully added audio track: ${audioTracks[0].label || 'unnamed'}`);
+        } else {
+          console.warn('No audio tracks found in video - watermarked video will have no sound');
+        }
+      }
+    } catch (audioError) {
+      console.warn('Could not capture audio track:', audioError);
+      console.warn('Watermarked video will be created without audio');
+    }
     
     resources.push(combinedStream);
     
@@ -264,6 +292,11 @@ export async function addWatermarkToVideo(
       // Process video frames
       const processFrame = () => {
         if (video.paused || video.ended) {
+          // Stop audio video if it exists
+          const audioVideo = resources.find(r => r instanceof HTMLVideoElement && r !== video) as HTMLVideoElement | undefined;
+          if (audioVideo) {
+            audioVideo.pause();
+          }
           mediaRecorder.stop();
           return;
         }
@@ -300,9 +333,22 @@ export async function addWatermarkToVideo(
         setTimeout(() => requestAnimationFrame(processFrame), frameDuration);
       };
       
-      // Start video playback and frame processing
+      // Start both video elements for synchronized playback
       video.currentTime = 0;
-      video.play()
+      
+      // Find and start the audio video if it exists
+      const audioVideo = resources.find(r => r instanceof HTMLVideoElement && r !== video) as HTMLVideoElement | undefined;
+      if (audioVideo) {
+        audioVideo.currentTime = 0;
+      }
+      
+      // Start playback of both videos
+      const playPromises: Promise<void>[] = [video.play()];
+      if (audioVideo) {
+        playPromises.push(audioVideo.play());
+      }
+      
+      Promise.all(playPromises)
         .then(() => {
           requestAnimationFrame(processFrame);
         })
@@ -317,6 +363,13 @@ export async function addWatermarkToVideo(
         if (mediaRecorder.state !== 'inactive') {
           console.warn('Watermarking timed out, stopping recording');
           video.pause();
+          
+          // Stop audio video if it exists
+          const audioVideo = resources.find(r => r instanceof HTMLVideoElement && r !== video) as HTMLVideoElement | undefined;
+          if (audioVideo) {
+            audioVideo.pause();
+          }
+          
           mediaRecorder.stop();
         }
       }, maxDuration);
