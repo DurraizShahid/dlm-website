@@ -10,10 +10,13 @@ const FACEBOOK_APP_ID = import.meta.env.VITE_FACEBOOK_APP_ID || '';
 const FACEBOOK_APP_SECRET = import.meta.env.VITE_FACEBOOK_APP_SECRET || '';
 const REDIRECT_URI = 'https://www.dlmpakistan.com/admin';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const INSTAGRAM_PROXY_URL = `${SUPABASE_URL}/functions/v1/instagram-proxy`;
 
 console.log('=== Instagram Utilities Loaded ===');
 console.log('Instagram Proxy URL:', INSTAGRAM_PROXY_URL);
+console.log('Supabase URL:', SUPABASE_URL);
+console.log('Has Anon Key:', !!SUPABASE_ANON_KEY);
 console.log('==============================');
 
 /**
@@ -45,6 +48,8 @@ const instagramApiRequest = async (endpoint: string, options: RequestInit) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'apikey': SUPABASE_ANON_KEY
           },
           body: JSON.stringify(proxyRequestBody)
         });

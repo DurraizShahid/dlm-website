@@ -5,10 +5,13 @@ const TIKTOK_CLIENT_SECRET = 'DRQn7VPdFhf8nF28s6SBQV3fi9ltGIDr';
 const TIKTOK_API_BASE_URL = 'https://open.tiktokapis.com/v2';
 const REDIRECT_URI = 'https://www.dlmpakistan.com/admin';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const TIKTOK_PROXY_URL = `${SUPABASE_URL}/functions/v1/tiktok-proxy`;
 
 console.log('=== TikTok Utilities Loaded ===');
 console.log('TikTok Proxy URL:', TIKTOK_PROXY_URL);
+console.log('Supabase URL:', SUPABASE_URL);
+console.log('Has Anon Key:', !!SUPABASE_ANON_KEY);
 console.log('==============================');
 
 /**
@@ -40,6 +43,8 @@ const tiktokApiRequest = async (endpoint: string, options: RequestInit) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'apikey': SUPABASE_ANON_KEY
           },
           body: JSON.stringify(proxyRequestBody)
         });
