@@ -367,105 +367,6 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
 
           {/* Applications Tab */}
           <TabsContent value="applications" className="space-y-4 sm:space-y-6">
-            {/* Unpaid Applications Notification */}
-            {applications.some(app => app.status === 'unpaid') && (
-              <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r mx-2 sm:mx-0">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <AlertCircle className="h-5 w-5 text-amber-500" />
-                  </div>
-                  <div className="ml-3">
-                    <h3 className=" font-bold text-amber-800">{translate('Unpaid Applications Require Payment')}</h3>
-                    <p className="text-sm font-bold text-amber-800">{translate('Unpaid Applications ke liye Payment Zaroori Hai')}</p>
-                    <div className="mt-4 text-sm text-amber-700">
-                      <p>{translate('You have one or more unpaid applications. Please complete the payment process to have your application reviewed by our team.')}</p>
-                    
-                      <p className="mt-1 text-amber-700">{translate('Aapki aik ya zyada applications unpaid hain. Barae meherbani payment process mukammal karein taa ke hamari team aapki application review kar sake.')}</p>
-                      
-                      <div className="mt-8 space-y-3">
-                        <h4 className="font-bold text-amber-800">{translate('Payment Methods')}</h4>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          {/* EasyPaisa */}
-                          <div className="border border-amber-200 rounded-lg p-4 bg-white">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <img 
-                                src="/easypaisalogo.png" 
-                                alt="EasyPaisa" 
-                                className="h-6 w-auto"
-                              />
-                              <span className="font-bold text-gray-800 text-sm">EasyPaisa</span>
-                            </div>
-                            <p className="text-xs text-gray-600 mb-8">{translate('Mobile Account')}</p>
-                            <p className="font-mono bg-gray-100 p-1 rounded text-center text-xs">0333 32101200</p>
-                          </div>
-                          
-                          {/* JazzCash */}
-                          <div className="border border-amber-200 rounded-lg p-4 bg-white">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <img 
-                                src="/jazzcashlogo.png" 
-                                alt="JazzCash" 
-                                className="h-6 w-auto"
-                              />
-                              <span className="font-bold text-gray-800 text-sm">JazzCash</span>
-                            </div>
-                            <p className="text-xs text-gray-600 mb-8">{translate('Mobile Account')}</p>
-                            <p className="font-mono bg-gray-100 p-1 rounded text-center text-xs">0333 32101200</p>
-                          </div>
-                          
-                          {/* Bank Transfer */}
-                          <div className="border border-amber-200 rounded-lg p-3 bg-white">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <img 
-                                src="/bankalfalahlogo.png" 
-                                alt="Bank Alfalah" 
-                                className="h-6 w-auto"
-                              />
-                              <span className="font-bold text-gray-800 text-sm">Bank Transfer</span>
-                            </div>
-                            <div className="space-y-1 ml-8">
-                              <div className="flex justify-between text-xs">
-                                <span className="font-medium text-gray-700">Bank:</span>
-                                <span className="text-gray-900">Bank Alfalah Islamic</span>
-                              </div>
-                              <div className="flex justify-between text-xs">
-                                <span className="font-medium text-gray-700">Account Title:</span>
-                                <span className="text-gray-900">Fancy Tech Industries SMC (Pvt) Ltd</span>
-                              </div>
-                              <div className="flex justify-between text-xs">
-                                <span className="font-medium text-gray-700">Account #:</span>
-                                <span className="font-mono text-gray-900">5002491934</span>
-                              </div>
-                              <div className="flex justify-between text-xs">
-                                <span className="font-medium text-gray-700">IBAN:</span>
-                                <span className="font-mono text-gray-900">PK42ALFH5639005002491934</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-4 flex flex-col sm:flex-row gap-2">
-                        <Button variant="default" size="sm" className="text-xs">
-                          <Upload className="h-6 w-6 mr-1" />
-                          {translate('Upload Payment Receipt')}
-                        </Button>
-                        <Button variant="outline" size="sm" className="text-xs">
-                          <img src="/WhatsApp.svg" alt="WhatsApp" className="h-6 w-6 mr-1" />
-                          {translate('Send via WhatsApp')}
-                        </Button>
-                      </div>
-                      
-                      <p className="mt-3 text-xs text-amber-600">
-                        {translate('Once you pay, your application will be processed and reviewed by our team and approved or rejected accordingly. Payment confirmation may take up to 24 hours.')}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-            
             {applications.length === 0 ? (
               <Alert className="mx-2 sm:mx-0">
                 <FileText className="h-4 w-4" />
@@ -527,60 +428,141 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
                         </div>
                       )}
 
-                      {/* Payment Screenshot Section for Unpaid Applications */}
+                      {/* Payment Information for Unpaid Applications */}
                       {app.status === 'unpaid' && (
-                        <div className="pt-2 border-t border-gray-100">
-                          <h4 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">{translate('Payment Screenshot')}</h4>
-                          {app.payment_screenshot_url ? (
-                            <div className="flex items-center justify-between bg-green-50 p-3 rounded-lg">
-                              <div className="flex items-center space-x-2">
-                                <Check className="h-4 w-4 text-green-600" />
-                                <span className="text-xs sm:text-sm text-green-700">{translate('Screenshot uploaded')}</span>
-                              </div>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => viewPaymentScreenshot(app.payment_screenshot_url!)}
-                                className="text-xs"
-                              >
-                                <Eye className="h-3 w-3 mr-1" />
-                                {translate('View')}
-                              </Button>
-                            </div>
-                          ) : (
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => handleScreenshotUpload(app.id, e)}
-                                disabled={uploadingScreenshotId === app.id}
-                                className="hidden"
-                                id={`screenshot-upload-${app.id}`}
-                              />
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => document.getElementById(`screenshot-upload-${app.id}`)?.click()}
-                                disabled={uploadingScreenshotId === app.id}
-                                className="w-full sm:w-auto text-xs"
-                              >
-                                {uploadingScreenshotId === app.id ? (
-                                  <>
-                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
-                                    {translate('Uploading...')}
-                                  </>
-                                ) : (
-                                  <>
-                                    <Upload className="h-3 w-3 mr-1" />
-                                    {translate('Upload Screenshot')}
-                                  </>
-                                )}
-                              </Button>
-                              <p className="text-xs text-gray-500 sm:text-left">
-                                {translate('Upload proof of payment after making the transfer')}
+                        <div className="pt-3 border-t-2 border-amber-200 bg-amber-50 -mx-4 sm:-mx-6 px-4 sm:px-6 py-4 mt-4">
+                          <div className="flex items-start space-x-2 mb-3">
+                            <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <h4 className="font-bold text-amber-900 text-sm sm:text-base">{translate('Payment Required')}</h4>
+                              <p className="text-xs text-amber-800 mt-1">
+                                {translate('Please pay 5,000 PKR to process your application')}
                               </p>
                             </div>
-                          )}
+                          </div>
+
+                          <div className="space-y-3 mt-4">
+                            <h5 className="font-semibold text-amber-900 text-xs sm:text-sm">{translate('Payment Methods')}</h5>
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              {/* EasyPaisa */}
+                              <div className="border border-amber-300 rounded-lg p-3 bg-white">
+                                <div className="flex items-center space-x-2 mb-1">
+                                  <img 
+                                    src="/easypaisalogo.png" 
+                                    alt="EasyPaisa" 
+                                    className="h-5 w-auto"
+                                  />
+                                  <span className="font-bold text-gray-800 text-xs">EasyPaisa</span>
+                                </div>
+                                <p className="text-xs text-gray-600 mb-2">{translate('Mobile Account')}</p>
+                                <p className="font-mono bg-amber-50 p-1 rounded text-center text-xs font-semibold">0333 32101200</p>
+                              </div>
+                              
+                              {/* JazzCash */}
+                              <div className="border border-amber-300 rounded-lg p-3 bg-white">
+                                <div className="flex items-center space-x-2 mb-1">
+                                  <img 
+                                    src="/jazzcashlogo.png" 
+                                    alt="JazzCash" 
+                                    className="h-5 w-auto"
+                                  />
+                                  <span className="font-bold text-gray-800 text-xs">JazzCash</span>
+                                </div>
+                                <p className="text-xs text-gray-600 mb-2">{translate('Mobile Account')}</p>
+                                <p className="font-mono bg-amber-50 p-1 rounded text-center text-xs font-semibold">0333 32101200</p>
+                              </div>
+                              
+                              {/* Bank Transfer */}
+                              <div className="border border-amber-300 rounded-lg p-2 bg-white">
+                                <div className="flex items-center space-x-2 mb-1">
+                                  <img 
+                                    src="/bankalfalahlogo.png" 
+                                    alt="Bank Alfalah" 
+                                    className="h-5 w-auto"
+                                  />
+                                  <span className="font-bold text-gray-800 text-xs">Bank</span>
+                                </div>
+                                <div className="space-y-0.5">
+                                  <div className="text-xs">
+                                    <span className="text-gray-600">Bank:</span>
+                                    <span className="text-gray-900 ml-1 font-medium">Bank Alfalah Islamic</span>
+                                  </div>
+                                  <div className="text-xs">
+                                    <span className="text-gray-600">Title:</span>
+                                    <span className="text-gray-900 ml-1 font-medium text-[10px]">Fancy Tech Industries</span>
+                                  </div>
+                                  <div className="text-xs">
+                                    <span className="text-gray-600">Account:</span>
+                                    <span className="font-mono text-gray-900 ml-1 font-medium">5002491934</span>
+                                  </div>
+                                  <div className="text-xs">
+                                    <span className="text-gray-600">IBAN:</span>
+                                    <span className="font-mono text-gray-900 ml-1 font-medium text-[9px]">PK42ALFH5639005002491934</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Upload Payment Screenshot Section */}
+                          <div className="mt-4 pt-3 border-t border-amber-200">
+                            <h5 className="font-semibold text-amber-900 text-xs sm:text-sm mb-2">{translate('Upload Payment Proof')}</h5>
+                            {app.payment_screenshot_url ? (
+                              <div className="flex items-center justify-between bg-green-50 p-3 rounded-lg border border-green-200">
+                                <div className="flex items-center space-x-2">
+                                  <Check className="h-4 w-4 text-green-600" />
+                                  <span className="text-xs sm:text-sm text-green-700 font-medium">{translate('Screenshot uploaded')}</span>
+                                </div>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => viewPaymentScreenshot(app.payment_screenshot_url!)}
+                                  className="text-xs"
+                                >
+                                  <Eye className="h-3 w-3 mr-1" />
+                                  {translate('View')}
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => handleScreenshotUpload(app.id, e)}
+                                  disabled={uploadingScreenshotId === app.id}
+                                  className="hidden"
+                                  id={`screenshot-upload-${app.id}`}
+                                />
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => document.getElementById(`screenshot-upload-${app.id}`)?.click()}
+                                  disabled={uploadingScreenshotId === app.id}
+                                  className="w-full text-xs bg-amber-600 hover:bg-amber-700"
+                                >
+                                  {uploadingScreenshotId === app.id ? (
+                                    <>
+                                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
+                                      {translate('Uploading...')}
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Upload className="h-3 w-3 mr-1" />
+                                      {translate('Upload Screenshot')}
+                                    </>
+                                  )}
+                                </Button>
+                                <p className="text-xs text-amber-700 text-center">
+                                  {translate('Upload proof of payment after making the transfer')}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+
+                          <p className="mt-3 text-xs text-amber-700 bg-amber-100 p-2 rounded">
+                            {translate('Once you pay, your application will be processed and reviewed by our team and approved or rejected accordingly. Payment confirmation may take up to 24 hours.')}
+                          </p>
                         </div>
                       )}
 
