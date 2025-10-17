@@ -74,9 +74,57 @@ export interface Database {
           updated_at?: string;
         };
       };
+      guidebooks: {
+        Row: {
+          id: string;
+          title: string;
+          description: string;
+          category: string;
+          file_path: string;
+          is_free: boolean;
+          order_index: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          description: string;
+          category: string;
+          file_path: string;
+          is_free?: boolean;
+          order_index?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          description?: string;
+          category?: string;
+          file_path?: string;
+          is_free?: boolean;
+          order_index?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
     Views: {};
     Functions: {};
     Enums: {};
   };
+}
+
+// Helper interface for guidebook data
+export interface Guidebook {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  file_path: string;
+  is_free: boolean;
+  order_index: number;
+  created_at: string;
+  updated_at: string;
 }

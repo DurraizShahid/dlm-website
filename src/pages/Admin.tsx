@@ -4,6 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   Table, 
   TableBody, 
@@ -17,6 +21,7 @@ import { generateVideoSignedUrl } from '@/utils/videoUtils';
 import { refreshTikTokAccessToken, postVideoToTikTok, generateTikTokOAuthUrl, exchangeCodeForAccessToken, getTikTokUserInfo, testTikTokConnection } from '@/utils/tiktokUtils';
 import { generateInstagramOAuthUrl, postVideoToInstagram, getInstagramAccounts, exchangeCodeForAccessToken as exchangeInstagramCodeForAccessToken, getInstagramUserInfo, testInstagramConnection } from '@/utils/instagramUtils';
 import { addWatermarkToVideo, verifyWatermark, validateVideoForWatermarking, type WatermarkOptions, type WatermarkProgress } from '@/utils/videoWatermark';
+import { Guidebook } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 import { 
   Shield, 
@@ -30,7 +35,11 @@ import {
   LogOut,
   Download,
   Image as ImageIcon,
-  LogIn
+  LogIn,
+  BookOpen,
+  Plus,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 
 interface Application {
@@ -60,6 +69,20 @@ const Admin = () => {
   const [instagramUser, setInstagramUser] = useState<any>(null);
   const [instagramAccessToken, setInstagramAccessToken] = useState<string | null>(null);
   const [instagramAccounts, setInstagramAccounts] = useState<any[]>([]);
+  
+  // Guidebook management state
+  const [guidebooks, setGuidebooks] = useState<Guidebook[]>([]);
+  const [loadingGuidebooks, setLoadingGuidebooks] = useState(false);
+  const [editingGuidebook, setEditingGuidebook] = useState<Guidebook | null>(null);
+  const [showGuidebookForm, setShowGuidebookForm] = useState(false);
+  const [guidebookForm, setGuidebookForm] = useState({
+    title: '',
+    description: '',
+    category: '',
+    file_path: '',
+    is_free: false,
+    order_index: 0
+  });
 
   // Check if already authenticated (from session storage)
   useEffect(() => {
@@ -67,6 +90,7 @@ const Admin = () => {
     if (adminAuth === 'true') {
       setIsAuthenticated(true);
       fetchApplications();
+      fetchGuidebooks();
     }
     
     // Check for TikTok OAuth callback
@@ -225,6 +249,7 @@ const Admin = () => {
       sessionStorage.setItem('admin_authenticated', 'true');
       toast.success('Successfully logged in as admin');
       fetchApplications();
+      fetchGuidebooks();
     } else {
       setLoginError('Invalid username or password');
       toast.error('Invalid credentials');
@@ -294,6 +319,142 @@ const Admin = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Fetch all guidebooks
+  const fetchGuidebooks = async () => {
+    try {
+      setLoadingGuidebooks(true);
+      const { data, error } = await (supabase as any)
+        .from('guidebooks')
+        .select('*')
+        .order('order_index', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching guidebooks:', error);
+        toast.error('Error loading guidebooks');
+        return;
+      }
+
+      setGuidebooks(data || []);
+    } catch (error) {
+      console.error('Error fetching guidebooks:', error);
+      toast.error('Error loading guidebooks');
+    } finally {
+      setLoadingGuidebooks(false);
+    }
+  };
+
+  // Create new guidebook
+  const createGuidebook = async () => {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('guidebooks')
+        .insert([guidebookForm])
+        .select();
+
+      if (error) {
+        console.error('Error creating guidebook:', error);
+        toast.error('Error creating guidebook');
+        return;
+      }
+
+      toast.success('Guidebook created successfully');
+      setShowGuidebookForm(false);
+      resetGuidebookForm();
+      fetchGuidebooks();
+    } catch (error) {
+      console.error('Error creating guidebook:', error);
+      toast.error('Error creating guidebook');
+    }
+  };
+
+  // Update existing guidebook
+  const updateGuidebook = async () => {
+    if (!editingGuidebook) return;
+
+    try {
+      const { data, error } = await (supabase as any)
+        .from('guidebooks')
+        .update({
+          ...guidebookForm,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editingGuidebook.id)
+        .select();
+
+      if (error) {
+        console.error('Error updating guidebook:', error);
+        toast.error('Error updating guidebook');
+        return;
+      }
+
+      toast.success('Guidebook updated successfully');
+      setShowGuidebookForm(false);
+      setEditingGuidebook(null);
+      resetGuidebookForm();
+      fetchGuidebooks();
+    } catch (error) {
+      console.error('Error updating guidebook:', error);
+      toast.error('Error updating guidebook');
+    }
+  };
+
+  // Delete guidebook
+  const deleteGuidebook = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this guidebook?')) return;
+
+    try {
+      const { error } = await (supabase as any)
+        .from('guidebooks')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting guidebook:', error);
+        toast.error('Error deleting guidebook');
+        return;
+      }
+
+      toast.success('Guidebook deleted successfully');
+      fetchGuidebooks();
+    } catch (error) {
+      console.error('Error deleting guidebook:', error);
+      toast.error('Error deleting guidebook');
+    }
+  };
+
+  // Reset guidebook form
+  const resetGuidebookForm = () => {
+    setGuidebookForm({
+      title: '',
+      description: '',
+      category: '',
+      file_path: '',
+      is_free: false,
+      order_index: 0
+    });
+  };
+
+  // Open form for editing
+  const openEditForm = (guidebook: Guidebook) => {
+    setEditingGuidebook(guidebook);
+    setGuidebookForm({
+      title: guidebook.title,
+      description: guidebook.description,
+      category: guidebook.category,
+      file_path: guidebook.file_path,
+      is_free: guidebook.is_free,
+      order_index: guidebook.order_index
+    });
+    setShowGuidebookForm(true);
+  };
+
+  // Open form for creating new guidebook
+  const openCreateForm = () => {
+    setEditingGuidebook(null);
+    resetGuidebookForm();
+    setShowGuidebookForm(true);
   };
 
   const handleViewVideo = async (filePath: string) => {
@@ -1039,26 +1200,39 @@ ${application.idea_description}
           </Card>
         </div>
 
-        {/* Applications Table */}
-        <div className="max-w-9xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle className="flex items-center space-x-2">
-                    <FileText className="h-5 w-5" />
-                    <span>All Applications</span>
-                  </CardTitle>
-                  <CardDescription>
-                    Review and manage all submitted applications
-                  </CardDescription>
+        {/* Main Content with Tabs */}
+        <Tabs defaultValue="applications" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsTrigger value="applications" className="flex items-center space-x-2">
+              <FileText className="h-4 w-4" />
+              <span>Applications</span>
+            </TabsTrigger>
+            <TabsTrigger value="guidebooks" className="flex items-center space-x-2">
+              <BookOpen className="h-4 w-4" />
+              <span>Guidebooks</span>
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Applications Tab */}
+          <TabsContent value="applications">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle className="flex items-center space-x-2">
+                      <FileText className="h-5 w-5" />
+                      <span>All Applications</span>
+                    </CardTitle>
+                    <CardDescription>
+                      Review and manage all submitted applications
+                    </CardDescription>
+                  </div>
+                  <Button onClick={fetchApplications} disabled={loading} size="sm">
+                    {loading ? 'Loading...' : 'Refresh'}
+                  </Button>
                 </div>
-                <Button onClick={fetchApplications} disabled={loading} size="sm">
-                  {loading ? 'Loading...' : 'Refresh'}
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
+              </CardHeader>
+              <CardContent>
               {loading ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800 mx-auto mb-4"></div>
@@ -1205,9 +1379,217 @@ ${application.idea_description}
                   </Table>
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Guidebooks Tab */}
+          <TabsContent value="guidebooks">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle className="flex items-center space-x-2">
+                      <BookOpen className="h-5 w-5" />
+                      <span>Manage Guidebooks</span>
+                    </CardTitle>
+                    <CardDescription>
+                      Configure which guidebooks are free and which require payment
+                    </CardDescription>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button onClick={fetchGuidebooks} disabled={loadingGuidebooks} size="sm" variant="outline">
+                      {loadingGuidebooks ? 'Loading...' : 'Refresh'}
+                    </Button>
+                    <Button onClick={openCreateForm} size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Guidebook
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* Guidebook Form */}
+                {showGuidebookForm && (
+                  <Card className="mb-6 border-2 border-blue-200">
+                    <CardHeader>
+                      <CardTitle className="text-lg">
+                        {editingGuidebook ? 'Edit Guidebook' : 'Create New Guidebook'}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="title">Title</Label>
+                            <Input
+                              id="title"
+                              placeholder="Guidebook #1"
+                              value={guidebookForm.title}
+                              onChange={(e) => setGuidebookForm({ ...guidebookForm, title: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="category">Category</Label>
+                            <Input
+                              id="category"
+                              placeholder="Getting Started"
+                              value={guidebookForm.category}
+                              onChange={(e) => setGuidebookForm({ ...guidebookForm, category: e.target.value })}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="description">Description</Label>
+                          <Textarea
+                            id="description"
+                            placeholder="Brief description of the guidebook content"
+                            value={guidebookForm.description}
+                            onChange={(e) => setGuidebookForm({ ...guidebookForm, description: e.target.value })}
+                            rows={3}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="file_path">File Path</Label>
+                            <Input
+                              id="file_path"
+                              placeholder="/guidebooks/guidebook1.pdf"
+                              value={guidebookForm.file_path}
+                              onChange={(e) => setGuidebookForm({ ...guidebookForm, file_path: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="order_index">Order</Label>
+                            <Input
+                              id="order_index"
+                              type="number"
+                              placeholder="1"
+                              value={guidebookForm.order_index}
+                              onChange={(e) => setGuidebookForm({ ...guidebookForm, order_index: parseInt(e.target.value) || 0 })}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="is_free"
+                            checked={guidebookForm.is_free}
+                            onCheckedChange={(checked) => setGuidebookForm({ ...guidebookForm, is_free: checked })}
+                          />
+                          <Label htmlFor="is_free" className="cursor-pointer">
+                            Free Access (No payment required)
+                          </Label>
+                        </div>
+
+                        <div className="flex justify-end space-x-2 pt-4">
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setShowGuidebookForm(false);
+                              setEditingGuidebook(null);
+                              resetGuidebookForm();
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                          <Button onClick={editingGuidebook ? updateGuidebook : createGuidebook}>
+                            {editingGuidebook ? 'Update Guidebook' : 'Create Guidebook'}
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Guidebooks Table */}
+                {loadingGuidebooks ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading guidebooks...</p>
+                  </div>
+                ) : guidebooks.length === 0 ? (
+                  <div className="text-center py-8">
+                    <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">No guidebooks found</p>
+                    <Button onClick={openCreateForm} className="mt-4" size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Your First Guidebook
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Order</TableHead>
+                          <TableHead>Title</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>File Path</TableHead>
+                          <TableHead>Access Type</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {guidebooks.map((guidebook) => (
+                          <TableRow key={guidebook.id}>
+                            <TableCell className="font-medium">{guidebook.order_index}</TableCell>
+                            <TableCell className="font-medium">{guidebook.title}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{guidebook.category}</Badge>
+                            </TableCell>
+                            <TableCell className="max-w-md">
+                              <div className="truncate" title={guidebook.description}>
+                                {guidebook.description}
+                              </div>
+                            </TableCell>
+                            <TableCell className="font-mono text-sm">{guidebook.file_path}</TableCell>
+                            <TableCell>
+                              {guidebook.is_free ? (
+                                <Badge className="bg-green-100 text-green-800 border-green-300">
+                                  Free
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-orange-100 text-orange-800 border-orange-300">
+                                  Paid
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex space-x-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openEditForm(guidebook)}
+                                  className="text-blue-600 hover:text-blue-700"
+                                >
+                                  <Pencil className="h-3 w-3 mr-1" />
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => deleteGuidebook(guidebook.id)}
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="h-3 w-3 mr-1" />
+                                  Delete
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

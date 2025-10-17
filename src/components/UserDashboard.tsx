@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { translations } from '@/i18n/translations';
 import { supabase } from '@/integrations/supabase/client';
+import { Guidebook } from '@/integrations/supabase/types';
 import { generateVideoSignedUrl, generateScreenshotSignedUrl } from '@/utils/videoUtils';
 import { 
   FileText, 
@@ -52,6 +53,8 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
   const [applications, setApplications] = useState<Application[]>(propApplications || []);
   const [loadingData, setLoadingData] = useState(false);
   const [uploadingScreenshotId, setUploadingScreenshotId] = useState<string | null>(null);
+  const [guidebooks, setGuidebooks] = useState<Guidebook[]>([]);
+  const [loadingGuidebooks, setLoadingGuidebooks] = useState(false);
 
   // Check if user has at least one paid application
   const hasPaidApplication = useMemo(() => {
@@ -102,6 +105,29 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
       setLoadingData(false);
     }
   }, [userEmail, translate]);
+
+  // Fetch guidebooks from database
+  const fetchGuidebooks = useCallback(async () => {
+    try {
+      setLoadingGuidebooks(true);
+      const { data, error } = await (supabase as any)
+        .from('guidebooks')
+        .select('*')
+        .order('order_index', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching guidebooks:', error);
+        toast.error(translate('Error loading guidebooks'));
+      } else {
+        setGuidebooks(data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching guidebooks:', error);
+      toast.error(translate('Error loading guidebooks'));
+    } finally {
+      setLoadingGuidebooks(false);
+    }
+  }, [translate]);
 
   // Function to handle video viewing - memoized for performance
   const handleViewVideo = useCallback(async (filePath: string) => {
@@ -201,7 +227,9 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
     if (!propApplications && userEmail) {
       fetchUserData();
     }
-  }, [userEmail, propApplications, fetchUserData]);
+    // Always fetch guidebooks
+    fetchGuidebooks();
+  }, [userEmail, propApplications, fetchUserData, fetchGuidebooks]);
 
   // Memoize status badge for performance
   const getStatusBadge = useMemo(() => (status: string) => {
@@ -586,120 +614,74 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
 
           {/* Resources Tab */}
           <TabsContent value="resources" className="space-y-4 sm:space-y-6">
-            {!canAccessGuidebooks ? (
+            {loadingGuidebooks ? (
               <div className="text-center py-12">
-                <div className="mx-auto max-w-md">
-                  <Lock className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">{translate('Guidebooks Locked')}</h3>
-                  <p className="text-gray-600 mb-6">
-                    {translate('Please submit an application and have it approved or pay the application fee to unlock access to the guidebooks.')}
-                  </p>
-                  <Button variant="default" onClick={() => document.getElementById('tabs-trigger-applications')?.click()}>
-                    {translate('View Applications')}
-                  </Button>
-                </div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">{translate('Loading guidebooks...')}</p>
+              </div>
+            ) : guidebooks.length === 0 ? (
+              <div className="text-center py-12">
+                <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-gray-900 mb-2">{translate('No Guidebooks Available')}</h3>
+                <p className="text-gray-600 mb-6">
+                  {translate('Guidebooks will be available soon. Please check back later.')}
+                </p>
               </div>
             ) : (
               <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 px-2 sm:px-0">
-                {/* Guidebook #1 */}
-                <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                  <CardHeader className="pb-3 px-4 sm:px-6">
-                    <CardTitle className="text-base sm:text-lg">{translate('Guidebook #1')}</CardTitle>
-                    <Badge variant="outline" className="w-fit text-xs">{translate('Getting Started')}</Badge>
-                  </CardHeader>
-                  <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
-                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">{translate('Essential first steps for entrepreneurs and business fundamentals')}</p>
-                    <Button 
-                      variant="default" 
-                      size="sm" 
-                      className="w-full text-xs sm:text-sm h-9 sm:h-10"
-                      onClick={() => window.open('/guidebooks/guidebook1.pdf', '_blank')}
-                    >
-                      <Download className="h-3 w-3 mr-2" />
-                      {translate('Download Guidebook #1')}
-                    </Button>
-                  </CardContent>
-                </Card>
+                {guidebooks.map((guidebook) => {
+                  // Check if user can access this guidebook
+                  const canAccessThisGuidebook = guidebook.is_free || canAccessGuidebooks;
 
-                {/* Guidebook #2 */}
-                <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                  <CardHeader className="pb-3 px-4 sm:px-6">
-                    <CardTitle className="text-base sm:text-lg">{translate('Guidebook #2')}</CardTitle>
-                    <Badge variant="outline" className="w-fit text-xs">{translate('Business Planning')}</Badge>
-                  </CardHeader>
-                  <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
-                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">{translate('Comprehensive guide to creating effective business plans and strategies')}</p>
-                    <Button 
-                      variant="default" 
-                      size="sm" 
-                      className="w-full text-xs sm:text-sm h-9 sm:h-10"
-                      onClick={() => window.open('/guidebooks/guidebook2.pdf', '_blank')}
-                    >
-                      <Download className="h-3 w-3 mr-2" />
-                      {translate('Download Guidebook #2')}
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                {/* Guidebook #3 */}
-                <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                  <CardHeader className="pb-3 px-4 sm:px-6">
-                    <CardTitle className="text-base sm:text-lg">{translate('Guidebook #3')}</CardTitle>
-                    <Badge variant="outline" className="w-fit text-xs">{translate('Marketing')}</Badge>
-                  </CardHeader>
-                  <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
-                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">{translate('Marketing strategies and customer acquisition techniques for new businesses')}</p>
-                    <Button 
-                      variant="default" 
-                      size="sm" 
-                      className="w-full text-xs sm:text-sm h-9 sm:h-10"
-                      onClick={() => window.open('/guidebooks/guidebook3.pdf', '_blank')}
-                    >
-                      <Download className="h-3 w-3 mr-2" />
-                      {translate('Download Guidebook #3')}
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                {/* Guidebook #4 */}
-                <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                  <CardHeader className="pb-3 px-4 sm:px-6">
-                    <CardTitle className="text-base sm:text-lg">{translate('Guidebook #4')}</CardTitle>
-                    <Badge variant="outline" className="w-fit text-xs">{translate('Finance')}</Badge>
-                  </CardHeader>
-                  <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
-                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">{translate('Financial management, funding options, and investment strategies')}</p>
-                    <Button 
-                      variant="default" 
-                      size="sm" 
-                      className="w-full text-xs sm:text-sm h-9 sm:h-10"
-                      onClick={() => window.open('/guidebooks/guidebook4.pdf', '_blank')}
-                    >
-                      <Download className="h-3 w-3 mr-2" />
-                      {translate('Download Guidebook #4')}
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                {/* Guidebook #5 */}
-                <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                  <CardHeader className="pb-3 px-4 sm:px-6">
-                    <CardTitle className="text-base sm:text-lg">{translate('Guidebook #5')}</CardTitle>
-                    <Badge variant="outline" className="w-fit text-xs">{translate('Growth & Scale')}</Badge>
-                  </CardHeader>
-                  <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
-                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">{translate('Scaling your business, team building, and sustainable growth practices')}</p>
-                    <Button 
-                      variant="default" 
-                      size="sm" 
-                      className="w-full text-xs sm:text-sm h-9 sm:h-10"
-                      onClick={() => window.open('/guidebooks/guidebook5.pdf', '_blank')}
-                    >
-                      <Download className="h-3 w-3 mr-2" />
-                      {translate('Download Guidebook #5')}
-                    </Button>
-                  </CardContent>
-                </Card>
+                  return (
+                    <Card key={guidebook.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                      <CardHeader className="pb-3 px-4 sm:px-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <CardTitle className="text-base sm:text-lg">{translate(guidebook.title)}</CardTitle>
+                            <Badge variant="outline" className="w-fit text-xs mt-2">{translate(guidebook.category)}</Badge>
+                          </div>
+                          {guidebook.is_free && (
+                            <Badge className="bg-green-100 text-green-800 border-green-300 text-xs">
+                              {translate('Free')}
+                            </Badge>
+                          )}
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
+                        <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                          {translate(guidebook.description)}
+                        </p>
+                        {canAccessThisGuidebook ? (
+                          <Button 
+                            variant="default" 
+                            size="sm" 
+                            className="w-full text-xs sm:text-sm h-9 sm:h-10"
+                            onClick={() => window.open(guidebook.file_path, '_blank')}
+                          >
+                            <Download className="h-3 w-3 mr-2" />
+                            {translate('Download')} {translate(guidebook.title)}
+                          </Button>
+                        ) : (
+                          <div className="text-center py-2">
+                            <Lock className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                            <p className="text-xs text-gray-500 mb-2">
+                              {translate('Locked')}
+                            </p>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="w-full text-xs"
+                              onClick={() => document.getElementById('tabs-trigger-applications')?.click()}
+                            >
+                              {translate('View Applications')}
+                            </Button>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </TabsContent>
