@@ -757,13 +757,16 @@ ${application.idea_description}
         }
       };
       
-      // Watermarking options
+      // Watermarking options with red border
       const watermarkOptions: WatermarkOptions = {
         position: 'top-left',
         opacity: 0.7,
         scale: 0.15,
         margin: 20,
-        outputFormat: 'webm' // Using WebM for speed and reliability (change to 'mp4' if needed)
+        outputFormat: 'webm', // Using WebM for speed and reliability (change to 'mp4' if needed)
+        addBorder: true, // Add red border around video
+        borderColor: 'red', // Red border color
+        borderWidth: 10 // 10 pixels wide border
       };
       
       try {

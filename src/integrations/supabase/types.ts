@@ -6,6 +6,7 @@ export interface Database {
           id: string;
           full_name: string;
           email: string;
+          phone_number: string | null;
           age: number;
           address: string;
           cnic: string;
@@ -21,6 +22,7 @@ export interface Database {
           id?: string;
           full_name: string;
           email: string;
+          phone_number?: string | null;
           age: number;
           address: string;
           cnic: string;
@@ -36,6 +38,7 @@ export interface Database {
           id?: string;
           full_name?: string;
           email?: string;
+          phone_number?: string | null;
           age?: number;
           address?: string;
           cnic?: string;

@@ -13,6 +13,7 @@ interface Application {
   id: string;
   full_name: string;
   email: string;
+  phone_number?: string;
   idea_title: string;
   idea_description: string;
   status: 'pending' | 'under_review' | 'approved' | 'rejected' | 'unpaid' | 'paid';
@@ -24,6 +25,8 @@ interface Application {
 const Dashboard = () => {
   const { language } = useLanguage();
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [loginIdentifier, setLoginIdentifier] = useState('');
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -33,28 +36,35 @@ const Dashboard = () => {
     return translations[key]?.[language] || translations[key]?.en || key;
   };
 
-  // Check for email parameter in URL on component mount
+  // Check for email or phone parameter in URL on component mount
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const emailParam = urlParams.get('email');
+    const phoneParam = urlParams.get('phone');
     
     if (emailParam) {
-      setEmail(decodeURIComponent(emailParam));
-      handleEmailSubmitAutomatically(decodeURIComponent(emailParam));
+      const decodedEmail = decodeURIComponent(emailParam);
+      setLoginIdentifier(decodedEmail);
+      handleLoginAutomatically(decodedEmail, 'email');
+    } else if (phoneParam) {
+      const decodedPhone = decodeURIComponent(phoneParam);
+      setLoginIdentifier(decodedPhone);
+      handleLoginAutomatically(decodedPhone, 'phone');
     }
   }, [location]);
 
-  const handleEmailSubmitAutomatically = async (emailAddress: string) => {
-    if (!emailAddress.trim()) {
+  const handleLoginAutomatically = async (identifier: string, type: 'email' | 'phone') => {
+    if (!identifier.trim()) {
       return;
     }
 
     setIsLoading(true);
     try {
+      const column = type === 'email' ? 'email' : 'phone_number';
       const { data, error } = await (supabase as any)
         .from('application_submissions')
         .select('*')
-        .eq('email', emailAddress.toLowerCase().trim())
+        .eq(column, identifier.toLowerCase().trim())
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -64,13 +74,13 @@ const Dashboard = () => {
       }
 
       if (!data || data.length === 0) {
-        toast.error('No applications found for this email address.');
+        toast.error(`No applications found for this ${type}.`);
         return;
       }
 
       setApplications(data);
       setIsLoggedIn(true);
-      toast.success(`Found ${data.length} application(s) for ${emailAddress}`);
+      toast.success(`Found ${data.length} application(s) for ${identifier}`);
 
     } catch (error) {
       console.error('Dashboard access error:', error);
@@ -80,19 +90,23 @@ const Dashboard = () => {
     }
   };
 
-  const handleEmailSubmit = async (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) {
-      toast.error('Please enter your email address');
+    if (!loginIdentifier.trim()) {
+      toast.error('Please enter your email or phone number');
       return;
     }
 
     setIsLoading(true);
     try {
+      // Try to detect if it's an email or phone number
+      const isEmail = loginIdentifier.includes('@');
+      const column = isEmail ? 'email' : 'phone_number';
+      
       const { data, error } = await (supabase as any)
         .from('application_submissions')
         .select('*')
-        .eq('email', email.toLowerCase().trim())
+        .eq(column, loginIdentifier.toLowerCase().trim())
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -102,13 +116,13 @@ const Dashboard = () => {
       }
 
       if (!data || data.length === 0) {
-        toast.error('No applications found for this email address.');
+        toast.error(`No applications found for this ${isEmail ? 'email' : 'phone number'}.`);
         return;
       }
 
       setApplications(data);
       setIsLoggedIn(true);
-      toast.success(`Found ${data.length} application(s) for ${email}`);
+      toast.success(`Found ${data.length} application(s) for ${loginIdentifier}`);
 
     } catch (error) {
       console.error('Dashboard access error:', error);
@@ -119,7 +133,7 @@ const Dashboard = () => {
   };
 
   if (isLoggedIn) {
-    return <UserDashboard applications={applications} userEmail={email} />;
+    return <UserDashboard applications={applications} userEmail={loginIdentifier} />;
   }
 
   return (
@@ -131,24 +145,24 @@ const Dashboard = () => {
               Access Your Dashboard
             </CardTitle>
             <CardDescription className="text-green-100 text-sm sm:text-base">
-              Enter your email to view your applications
+              Enter your email or phone number to view your applications
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 sm:p-6">
-            <form onSubmit={handleEmailSubmit} className="space-y-4">
+            <form onSubmit={handleLoginSubmit} className="space-y-4">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
+                <label htmlFor="loginIdentifier" className="block text-sm font-medium text-gray-700 mb-2">
+                  Email or Phone Number
                 </label>
                 <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter the email you used to apply"
+                  id="loginIdentifier"
+                  type="text"
+                  value={loginIdentifier}
+                  onChange={(e) => setLoginIdentifier(e.target.value)}
+                  placeholder="Enter your email or phone number"
                   className="h-11 sm:h-12 border-2 border-gray-200 focus:border-blue-500 text-base"
                   required
-                  autoComplete="email"
+                  autoComplete="username"
                   autoFocus
                 />
               </div>

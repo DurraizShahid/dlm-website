@@ -101,6 +101,7 @@ const ApplyForm = () => {
     defaultValues: {
       fullName: '',
       email: '',
+      phoneNumber: '',
       age: 0,
       address: '',
       cnic: '',
@@ -200,6 +201,7 @@ const ApplyForm = () => {
         .insert({
           full_name: data.fullName,
           email: data.email,
+          phone_number: data.phoneNumber,
           age: data.age,
           address: data.address,
           cnic: data.cnic,
@@ -235,9 +237,13 @@ const ApplyForm = () => {
       setPendingFormData(null);
       setExistingCnicData(null);
       
-      // Redirect to dashboard with email pre-filled
+      // Redirect to dashboard with email or phone pre-filled
       setTimeout(() => {
-        navigate(`/dashboard?email=${encodeURIComponent(data.email)}`);
+        if (data.email) {
+          navigate(`/dashboard?email=${encodeURIComponent(data.email)}`);
+        } else if (data.phoneNumber) {
+          navigate(`/dashboard?phone=${encodeURIComponent(data.phoneNumber)}`);
+        }
       }, 3000);
       
     } catch (error) {
@@ -465,6 +471,31 @@ const ApplyForm = () => {
                           className="h-12 border-2 border-gray-200 focus:border-blue-500"
                         />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Phone Number */}
+                <FormField
+                  control={form.control}
+                  name="phoneNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-semibold text-gray-700">
+                        Phone Number
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="tel"
+                          placeholder="03001234567"
+                          {...field}
+                          className="h-12 border-2 border-gray-200 focus:border-blue-500"
+                        />
+                      </FormControl>
+                      <FormDescription className="text-xs text-gray-500">
+                        Enter your Pakistani phone number (e.g., 03001234567 or +923001234567)
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

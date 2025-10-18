@@ -5,6 +5,7 @@ CREATE TABLE application_submissions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   full_name TEXT NOT NULL,
   email TEXT NOT NULL,
+  phone_number TEXT, -- Pakistani phone number
   age INTEGER NOT NULL CHECK (age >= 0 AND age <= 100),
   address TEXT NOT NULL,
   cnic TEXT NOT NULL CHECK (cnic ~ '^\d{5}-\d{7}-\d{1}$'),
@@ -29,6 +30,7 @@ CREATE TABLE users (
 -- Create indexes for efficient querying
 CREATE INDEX idx_application_submissions_created_at ON application_submissions(created_at DESC);
 CREATE INDEX idx_application_submissions_email ON application_submissions(email);
+CREATE INDEX idx_application_submissions_phone ON application_submissions(phone_number);
 CREATE INDEX idx_users_email ON users(email);
 
 -- Enable RLS for basic security

@@ -5,6 +5,7 @@ export interface ApplicationSubmission {
   id?: string;
   full_name: string;
   email: string;
+  phone_number?: string;
   age: number;
   address: string;
   cnic: string;
@@ -27,6 +28,12 @@ export const applyFormSchema = z.object({
     .string()
     .email("Please enter a valid email address.")
     .min(1, "Email is required."),
+  phoneNumber: z
+    .string()
+    .regex(
+      /^(\+92|0)?[0-9]{10}$/,
+      "Please enter a valid Pakistani phone number (e.g., 03001234567 or +923001234567)."
+    ),
   age: z
     .number()
     .min(0, "Age must be a positive number.")

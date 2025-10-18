@@ -24,6 +24,9 @@ export interface WatermarkOptions {
   margin?: number; // pixels from edge
   watermarkUrl?: string;
   outputFormat?: 'webm' | 'mp4'; // Output format
+  addBorder?: boolean; // Whether to add a border around the video
+  borderColor?: string; // Border color (e.g., 'red', '#ff0000')
+  borderWidth?: number; // Border width in pixels
 }
 
 export interface WatermarkProgress {
@@ -41,7 +44,10 @@ const DEFAULT_OPTIONS: Required<WatermarkOptions> = {
   scale: 0.15,
   margin: 20,
   watermarkUrl: '/logo.png',
-  outputFormat: 'webm' // Default to WebM (faster, more reliable). Set to 'mp4' if needed.
+  outputFormat: 'webm', // Default to WebM (faster, more reliable). Set to 'mp4' if needed.
+  addBorder: true, // Add border by default
+  borderColor: 'red', // Red border
+  borderWidth: 10 // 10 pixels wide border
 };
 
 /**
@@ -667,6 +673,23 @@ export async function addWatermarkToVideo(
               watermarkHeight
             );
             ctx.globalAlpha = 1.0;
+            
+            // Add border if enabled
+            if (opts.addBorder) {
+              ctx.strokeStyle = opts.borderColor;
+              ctx.lineWidth = opts.borderWidth;
+              ctx.lineJoin = 'miter'; // Sharp corners
+              ctx.lineCap = 'square';
+              
+              // Draw border - accounting for half the border width on each side
+              const halfBorder = opts.borderWidth / 2;
+              ctx.strokeRect(
+                halfBorder,
+                halfBorder,
+                canvas.width - opts.borderWidth,
+                canvas.height - opts.borderWidth
+              );
+            }
           } else {
             // Frame not ready, skip this frame
             framesSkipped++;
