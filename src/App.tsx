@@ -11,6 +11,7 @@ import Academy from "./pages/Academy";
 import Apply from "./pages/Apply";
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
+import SetupPassword from "./pages/SetupPassword";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
@@ -35,6 +36,7 @@ const AppContent = () => {
         <Route path="/apply" element={<Apply />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/setup-password" element={<SetupPassword />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="*" element={<NotFound />} />

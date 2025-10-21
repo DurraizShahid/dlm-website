@@ -13,8 +13,10 @@ export interface Database {
           idea_title: string;
           idea_description: string;
           video_url: string | null;
+          payment_screenshot_url: string | null;
+          password_hash: string | null;
           user_id: string | null;
-          status: 'pending' | 'under_review' | 'approved' | 'rejected';
+          status: 'pending' | 'under_review' | 'approved' | 'rejected' | 'unpaid' | 'paid';
           created_at: string;
           updated_at: string;
         };
@@ -29,8 +31,10 @@ export interface Database {
           idea_title: string;
           idea_description: string;
           video_url?: string | null;
+          payment_screenshot_url?: string | null;
+          password_hash?: string | null;
           user_id?: string | null;
-          status?: 'pending' | 'under_review' | 'approved' | 'rejected';
+          status?: 'pending' | 'under_review' | 'approved' | 'rejected' | 'unpaid' | 'paid';
           created_at?: string;
           updated_at?: string;
         };
@@ -45,8 +49,10 @@ export interface Database {
           idea_title?: string;
           idea_description?: string;
           video_url?: string | null;
+          payment_screenshot_url?: string | null;
+          password_hash?: string | null;
           user_id?: string | null;
-          status?: 'pending' | 'under_review' | 'approved' | 'rejected';
+          status?: 'pending' | 'under_review' | 'approved' | 'rejected' | 'unpaid' | 'paid';
           created_at?: string;
           updated_at?: string;
         };

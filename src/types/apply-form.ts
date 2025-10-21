@@ -12,6 +12,8 @@ export interface ApplicationSubmission {
   idea_title: string;
   idea_description: string;
   video_url?: string;
+  payment_screenshot_url?: string;
+  password_hash?: string;
   user_id?: string;
   status?: 'pending' | 'under_review' | 'approved' | 'rejected' | 'unpaid' | 'paid';
   created_at?: string;

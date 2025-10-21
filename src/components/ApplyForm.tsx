@@ -196,7 +196,7 @@ const ApplyForm = () => {
       const status = isPaidApplication ? 'unpaid' : 'pending';
 
       // Submit application to database
-      const { error: submissionError } = await (supabase as any)
+      const { data: submittedData, error: submissionError } = await (supabase as any)
         .from('application_submissions')
         .insert({
           full_name: data.fullName,
@@ -209,7 +209,8 @@ const ApplyForm = () => {
           idea_description: data.ideaDescription,
           video_url: videoUrl,
           status: status,
-        });
+        })
+        .select();
 
       if (submissionError) {
         console.error('Submission error:', submissionError);
@@ -223,28 +224,38 @@ const ApplyForm = () => {
       
       console.log('Application submitted successfully to database');
 
+      // Get the newly created application ID
+      const newApplicationId = submittedData?.[0]?.id;
+
       // Success!
       if (isPaidApplication) {
-        toast.success('Application submitted! Status: Unpaid. Please wait for admin approval after payment.');
+        toast.success('Application submitted! Please set up your password to access your dashboard.');
       } else {
-        toast.success(translate('Application submitted successfully!'));
+        toast.success(translate('Application submitted successfully! Setting up your account...'));
       }
       
-      console.log('Resetting form and redirecting...');
+      console.log('Resetting form and redirecting to password setup...');
       form.reset();
       setUploadedVideoUrl(null);
       setShowPaymentModal(false);
       setPendingFormData(null);
       setExistingCnicData(null);
       
-      // Redirect to dashboard with email or phone pre-filled
+      // Redirect to password setup page
       setTimeout(() => {
+        const params = new URLSearchParams({
+          id: newApplicationId,
+        });
+        
         if (data.email) {
-          navigate(`/dashboard?email=${encodeURIComponent(data.email)}`);
-        } else if (data.phoneNumber) {
-          navigate(`/dashboard?phone=${encodeURIComponent(data.phoneNumber)}`);
+          params.append('email', data.email);
         }
-      }, 3000);
+        if (data.phoneNumber) {
+          params.append('phone', data.phoneNumber);
+        }
+        
+        navigate(`/setup-password?${params.toString()}`);
+      }, 2000);
       
     } catch (error) {
       console.error('Overall submission error:', error);
@@ -279,9 +290,25 @@ const ApplyForm = () => {
     console.log('Has existing entry:', hasExistingEntry);
     console.log('Existing entry details:', existingEntry);
     
-    // For the new requirement, ALL submissions require payment
-    // But we still need to check CNIC to determine payment amount in the future
-    console.log('Showing payment modal for all submissions');
+    // If user already has an application and password, redirect to dashboard login
+    if (hasExistingEntry && existingEntry.password_hash) {
+      console.log('User already has account with password, redirecting to dashboard login');
+      toast.info('You already have an account! Please login to access your dashboard.');
+      setTimeout(() => {
+        if (existingEntry.email) {
+          navigate(`/dashboard?email=${encodeURIComponent(existingEntry.email)}`);
+        } else if (existingEntry.phone_number) {
+          navigate(`/dashboard?phone=${encodeURIComponent(existingEntry.phone_number)}`);
+        } else {
+          navigate('/dashboard');
+        }
+      }, 2000);
+      return;
+    }
+    
+    // If user has application but no password, they can submit a new application
+    // (They'll set up password after submission)
+    console.log('Proceeding with application submission');
     setExistingCnicData(hasExistingEntry ? existingEntry : null);
     setPendingFormData(data);
     setShowPaymentModal(true);
