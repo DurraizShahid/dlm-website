@@ -55,6 +55,55 @@ export const generateScreenshotSignedUrl = async (
 };
 
 /**
+ * Generate a signed URL for accessing a guidebook file from Supabase Storage
+ * @param filePath - The file path in the storage bucket (e.g., 'guidebooks/filename.pdf') or full URL
+ * @param expiresIn - URL expiration time in seconds (default: 3600 = 1 hour)
+ * @returns Promise<string | null> - The signed URL or null if error
+ */
+export const generateGuidebookSignedUrl = async (
+  filePath: string, 
+  expiresIn: number = 3600
+): Promise<string | null> => {
+  try {
+    // Extract the path from URL if it's a full URL
+    let path = filePath;
+    
+    // If it's a full public URL, extract the path
+    if (filePath.includes('/storage/v1/object/public/application-videos/')) {
+      path = filePath.split('/storage/v1/object/public/application-videos/')[1];
+    } 
+    // If it's already a path starting with guidebooks/, use it as is
+    else if (filePath.startsWith('guidebooks/')) {
+      path = filePath;
+    }
+    // If it contains /guidebooks/ but doesn't start with it, extract the part after /guidebooks/
+    else if (filePath.includes('/guidebooks/')) {
+      const parts = filePath.split('/guidebooks/');
+      path = `guidebooks/${parts[parts.length - 1]}`;
+    }
+    // If it doesn't start with guidebooks/, assume it's just a filename and add the prefix
+    else if (!filePath.startsWith('guidebooks/')) {
+      path = `guidebooks/${filePath}`;
+    }
+
+    const { data, error } = await (supabase as any).storage
+      .from('application-videos')
+      .createSignedUrl(path, expiresIn);
+
+    if (error) {
+      console.error('Error creating signed URL for guidebook:', error);
+      console.error('File path used:', path);
+      return null;
+    }
+
+    return data.signedUrl;
+  } catch (error) {
+    console.error('Error generating signed URL for guidebook:', error);
+    return null;
+  }
+};
+
+/**
  * Check if a video URL is accessible
  * @param filePath - The file path in the storage bucket
  * @returns Promise<boolean> - True if video exists and is accessible

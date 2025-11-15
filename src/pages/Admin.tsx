@@ -478,7 +478,6 @@ const Admin = () => {
       const filePath = `guidebooks/${fileName}`;
 
       // Upload the file to Supabase Storage
-      // Try 'application-videos' bucket first (or create a 'guidebooks' bucket)
       const { error: uploadError } = await (supabase as any).storage
         .from('application-videos')
         .upload(filePath, file);
@@ -489,16 +488,11 @@ const Admin = () => {
         return null;
       }
 
-      // Get public URL for the file
-      const { data: urlData } = await (supabase as any).storage
-        .from('application-videos')
-        .getPublicUrl(filePath);
-
       toast.success('Guidebook file uploaded successfully!');
       console.log('Guidebook uploaded successfully:', filePath);
       
-      // Return the public URL path
-      return urlData.publicUrl;
+      // Return just the file path (not the full URL) - signed URLs will be generated on-demand
+      return filePath;
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('Error uploading guidebook file');

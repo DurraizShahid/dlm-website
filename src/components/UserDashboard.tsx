@@ -9,7 +9,7 @@ import { useLanguage } from '@/i18n/LanguageContext';
 import { translations } from '@/i18n/translations';
 import { supabase } from '@/integrations/supabase/client';
 import { Guidebook } from '@/integrations/supabase/types';
-import { generateVideoSignedUrl, generateScreenshotSignedUrl } from '@/utils/videoUtils';
+import { generateVideoSignedUrl, generateScreenshotSignedUrl, generateGuidebookSignedUrl } from '@/utils/videoUtils';
 import { 
   FileText, 
   Video, 
@@ -130,6 +130,20 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
   }, [translate]);
 
   // Function to handle video viewing - memoized for performance
+  const handleDownloadGuidebook = useCallback(async (filePath: string) => {
+    try {
+      const signedUrl = await generateGuidebookSignedUrl(filePath);
+      if (signedUrl) {
+        window.open(signedUrl, '_blank');
+      } else {
+        toast.error(translate('Error loading guidebook'));
+      }
+    } catch (error) {
+      console.error('Error opening guidebook:', error);
+      toast.error(translate('Error opening guidebook'));
+    }
+  }, [translate]);
+
   const handleViewVideo = useCallback(async (filePath: string) => {
     try {
       const signedUrl = await generateVideoSignedUrl(filePath);
@@ -639,7 +653,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ applications: propApplica
                             variant="default" 
                             size="sm" 
                             className="w-full text-xs sm:text-sm h-9 sm:h-10"
-                            onClick={() => window.open(guidebook.file_path, '_blank')}
+                            onClick={() => handleDownloadGuidebook(guidebook.file_path)}
                           >
                             <Download className="h-3 w-3 mr-2" />
                             {translate('Download')} {translate(guidebook.title)}
