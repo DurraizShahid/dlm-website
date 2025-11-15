@@ -83,6 +83,8 @@ const Admin = () => {
     is_free: false,
     order_index: 0
   });
+  const [selectedGuidebookFile, setSelectedGuidebookFile] = useState<File | null>(null);
+  const [uploadingGuidebook, setUploadingGuidebook] = useState(false);
 
   // Check if already authenticated (from session storage)
   useEffect(() => {
@@ -348,9 +350,25 @@ const Admin = () => {
   // Create new guidebook
   const createGuidebook = async () => {
     try {
+      // If a file is selected, upload it first
+      let filePath = guidebookForm.file_path;
+      if (selectedGuidebookFile) {
+        const uploadedPath = await uploadGuidebookFile(selectedGuidebookFile);
+        if (!uploadedPath) {
+          toast.error('Failed to upload guidebook file');
+          return;
+        }
+        filePath = uploadedPath;
+      }
+
+      if (!filePath) {
+        toast.error('Please upload a guidebook file');
+        return;
+      }
+
       const { data, error } = await (supabase as any)
         .from('guidebooks')
-        .insert([guidebookForm])
+        .insert([{ ...guidebookForm, file_path: filePath }])
         .select();
 
       if (error) {
@@ -374,10 +392,22 @@ const Admin = () => {
     if (!editingGuidebook) return;
 
     try {
+      // If a new file is selected, upload it first
+      let filePath = guidebookForm.file_path;
+      if (selectedGuidebookFile) {
+        const uploadedPath = await uploadGuidebookFile(selectedGuidebookFile);
+        if (!uploadedPath) {
+          toast.error('Failed to upload guidebook file');
+          return;
+        }
+        filePath = uploadedPath;
+      }
+
       const { data, error } = await (supabase as any)
         .from('guidebooks')
         .update({
           ...guidebookForm,
+          file_path: filePath,
           updated_at: new Date().toISOString()
         })
         .eq('id', editingGuidebook.id)
@@ -434,6 +464,48 @@ const Admin = () => {
       is_free: false,
       order_index: 0
     });
+    setSelectedGuidebookFile(null);
+  };
+
+  // Upload guidebook file to Supabase Storage
+  const uploadGuidebookFile = async (file: File): Promise<string | null> => {
+    try {
+      setUploadingGuidebook(true);
+      toast.info('Uploading guidebook file...');
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `guidebooks/${fileName}`;
+
+      // Upload the file to Supabase Storage
+      // Try 'application-videos' bucket first (or create a 'guidebooks' bucket)
+      const { error: uploadError } = await (supabase as any).storage
+        .from('application-videos')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        toast.error('Error uploading guidebook file');
+        return null;
+      }
+
+      // Get public URL for the file
+      const { data: urlData } = await (supabase as any).storage
+        .from('application-videos')
+        .getPublicUrl(filePath);
+
+      toast.success('Guidebook file uploaded successfully!');
+      console.log('Guidebook uploaded successfully:', filePath);
+      
+      // Return the public URL path
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Error uploading guidebook file');
+      return null;
+    } finally {
+      setUploadingGuidebook(false);
+    }
   };
 
   // Open form for editing
@@ -447,6 +519,7 @@ const Admin = () => {
       is_free: guidebook.is_free,
       order_index: guidebook.order_index
     });
+    setSelectedGuidebookFile(null);
     setShowGuidebookForm(true);
   };
 
@@ -1456,13 +1529,34 @@ ${application.idea_description}
 
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="file_path">File Path</Label>
+                            <Label htmlFor="guidebook_file">Upload Guidebook File</Label>
                             <Input
-                              id="file_path"
-                              placeholder="/guidebooks/guidebook1.pdf"
-                              value={guidebookForm.file_path}
-                              onChange={(e) => setGuidebookForm({ ...guidebookForm, file_path: e.target.value })}
+                              id="guidebook_file"
+                              type="file"
+                              accept=".pdf,.doc,.docx"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  setSelectedGuidebookFile(file);
+                                  // Clear the file_path when a new file is selected
+                                  setGuidebookForm({ ...guidebookForm, file_path: '' });
+                                }
+                              }}
+                              disabled={uploadingGuidebook}
                             />
+                            {selectedGuidebookFile && (
+                              <p className="text-sm text-gray-600">
+                                Selected: {selectedGuidebookFile.name}
+                              </p>
+                            )}
+                            {!selectedGuidebookFile && editingGuidebook && guidebookForm.file_path && (
+                              <p className="text-sm text-gray-500">
+                                Current file: {guidebookForm.file_path.split('/').pop()}
+                              </p>
+                            )}
+                            {uploadingGuidebook && (
+                              <p className="text-sm text-blue-600">Uploading...</p>
+                            )}
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="order_index">Order</Label>
@@ -1498,8 +1592,11 @@ ${application.idea_description}
                           >
                             Cancel
                           </Button>
-                          <Button onClick={editingGuidebook ? updateGuidebook : createGuidebook}>
-                            {editingGuidebook ? 'Update Guidebook' : 'Create Guidebook'}
+                          <Button 
+                            onClick={editingGuidebook ? updateGuidebook : createGuidebook}
+                            disabled={uploadingGuidebook}
+                          >
+                            {uploadingGuidebook ? 'Uploading...' : editingGuidebook ? 'Update Guidebook' : 'Create Guidebook'}
                           </Button>
                         </div>
                       </div>
