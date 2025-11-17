@@ -28,7 +28,7 @@ import { applyFormSchema, ApplyFormData } from '@/types/apply-form';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { translations } from '@/i18n/translations';
 import { toast } from 'sonner';
-import { Upload, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, X, CheckCircle, AlertCircle, BookOpen, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 // Note: Watermarking is handled by admin when downloading videos
 
@@ -328,6 +328,14 @@ const ApplyForm = () => {
     setShowPaymentModal(false);
     setPendingFormData(null);
     setExistingCnicData(null);
+  };
+
+  const handleContinueToFreeResources = async () => {
+    console.log('Continuing to free resources without payment');
+    if (pendingFormData) {
+      // Submit application without payment (status will be 'pending')
+      await submitApplication(pendingFormData, false);
+    }
   };
 
   // Debugging: Log when showPaymentModal changes
@@ -808,12 +816,58 @@ const ApplyForm = () => {
           <DialogContent className="sm:max-w-md max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader className="text-left sticky top-0 bg-white z-10 pb-4 border-b">
               <DialogTitle className="flex items-center space-x-2 text-xl">
-                <AlertCircle className="h-6 w-6 text-amber-500" />
-                <span>Application Fee Required</span>
+                <BookOpen className="h-6 w-6 text-green-600" />
+                <span>{translate('Continue Your Application')}</span>
               </DialogTitle>
             </DialogHeader>
             <div className="py-4">
               <DialogDescription className="text-sm text-gray-600 space-y-4">
+                {/* Free Resources Option - Prominent */}
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-400 p-5 rounded-lg shadow-md">
+                  <div className="flex items-start space-x-3 mb-3">
+                    <div className="flex-shrink-0">
+                      <BookOpen className="h-6 w-6 text-green-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-green-900 text-lg mb-2">{translate('Access Free Resources Now')}</h3>
+                      <p className="text-sm text-green-800 mb-3">
+                        {translate('You can continue without payment and immediately access our free learning resources, guidebooks, and educational materials.')}
+                      </p>
+                      <Button
+                        onClick={handleContinueToFreeResources}
+                        disabled={isSubmitting}
+                        className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg py-6 text-base font-semibold"
+                      >
+                        {isSubmitting ? (
+                          <span className="flex items-center justify-center">
+                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Processing...
+                          </span>
+                        ) : (
+                          <span className="flex items-center justify-center">
+                            {translate('Continue to Free Resources')}
+                            <ArrowRight className="ml-2 h-5 w-5" />
+                          </span>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-4 bg-white text-gray-500 font-medium">{translate('OR')}</span>
+                  </div>
+                </div>
+
+                {/* Payment Option - Secondary */}
                 <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r">
                   <div className="flex">
                     <div className="flex-shrink-0">
@@ -823,11 +877,11 @@ const ApplyForm = () => {
                       <p className="text-sm text-amber-700">
                         {existingCnicData ? (
                           <>
-                            A fee of <strong className="text-lg">5,000 PKR</strong> is required for additional idea submissions.
+                            {translate('To submit an additional application, a fee of 5,000 PKR is required.')}
                           </>
                         ) : (
                           <>
-                            A fee of <strong className="text-lg">5,000 PKR</strong> is required for all idea submissions.
+                            {translate('To submit your application for the competition, a fee of 5,000 PKR is required.')}
                           </>
                         )}
                       </p>
@@ -854,19 +908,6 @@ const ApplyForm = () => {
                     </div>
                   </div>
                 )}
-                
-                <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <AlertCircle className="h-5 w-5 text-red-500" />
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm text-red-700">
-                        Your application will be marked as "Unpaid" until an admin confirms your payment.
-                      </p>
-                    </div>
-                  </div>
-                </div>
                 
                 <div className="space-y-4">
                   <h4 className="font-bold text-gray-800 text-lg border-b pb-2">Payment Methods</h4>
@@ -936,7 +977,7 @@ const ApplyForm = () => {
                 </div>
                 
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                  <h4 className="font-bold text-gray-800 mb-2">Important Information</h4>
+                  <h4 className="font-bold text-gray-800 mb-2">{translate('Payment Information')}</h4>
                   <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
                     <li>Your application will be marked as "Unpaid" until an admin confirms your payment</li>
                     <li>Please keep a screenshot of your payment receipt for reference</li>
@@ -946,21 +987,21 @@ const ApplyForm = () => {
                 </div>
               </DialogDescription>
             </div>
-            <DialogFooter className="flex-col sm:flex-row gap-3 pt-2 sticky bottom-0 bg-white z-10 pt-4 border-t">
+            <DialogFooter className="flex-col gap-3 pt-2 sticky bottom-0 bg-white z-10 pt-4 border-t">
               <Button
                 variant="outline"
                 onClick={handlePaymentCancel}
-                className="w-full sm:w-1/2 py-6 text-base"
+                className="w-full py-4 text-base"
               >
-                Cancel Application
+                Cancel
               </Button>
               <Button
                 onClick={handlePaymentConfirm}
                 disabled={isSubmitting}
-                className="w-full sm:w-1/2 py-6 text-base bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg"
+                className="w-full py-4 text-base bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg"
               >
                 {isSubmitting ? (
-                  <span className="flex items-center">
+                  <span className="flex items-center justify-center">
                     <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -968,7 +1009,7 @@ const ApplyForm = () => {
                     Processing...
                   </span>
                 ) : (
-                  existingCnicData ? 'Pay 5,000 PKR & Submit' : 'Pay 5,000 PKR & Submit'
+                  translate('Pay 5,000 PKR & Submit Application')
                 )}
               </Button>
             </DialogFooter>

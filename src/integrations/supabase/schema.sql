@@ -75,7 +75,7 @@ CREATE TABLE guidebooks (
   title TEXT NOT NULL,
   description TEXT NOT NULL,
   category TEXT NOT NULL,
-  file_path TEXT NOT NULL, -- Path to the PDF file (e.g., '/guidebooks/guidebook1.pdf')
+  file_path TEXT NOT NULL, -- Path to the resource file (PDF/image/video), e.g., 'guidebooks/resource-1.pdf'
   is_free BOOLEAN DEFAULT false, -- Whether the guidebook is free or requires payment
   order_index INTEGER NOT NULL DEFAULT 0, -- For ordering the guidebooks
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,

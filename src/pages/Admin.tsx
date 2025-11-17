@@ -57,6 +57,33 @@ interface Application {
   created_at: string;
 }
 
+const ALLOWED_GUIDEBOOK_MIME_TYPES = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+];
+
+const ALLOWED_GUIDEBOOK_MIME_PREFIXES = ['image/', 'video/'];
+
+const ALLOWED_GUIDEBOOK_EXTENSIONS = [
+  'pdf',
+  'doc',
+  'docx',
+  'png',
+  'jpg',
+  'jpeg',
+  'gif',
+  'bmp',
+  'webp',
+  'svg',
+  'mp4',
+  'mov',
+  'm4v',
+  'webm',
+  'avi',
+  'mkv',
+];
+
 const Admin = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState('');
@@ -465,6 +492,24 @@ const Admin = () => {
       order_index: 0
     });
     setSelectedGuidebookFile(null);
+  };
+
+  const handleGuidebookFileSelection = (file?: File) => {
+    if (!file) return;
+
+    const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
+    const isAllowedByMime =
+      ALLOWED_GUIDEBOOK_MIME_TYPES.includes(file.type) ||
+      ALLOWED_GUIDEBOOK_MIME_PREFIXES.some((prefix) => file.type.startsWith(prefix));
+    const isAllowedByExtension = ALLOWED_GUIDEBOOK_EXTENSIONS.includes(fileExtension);
+
+    if (!isAllowedByMime && !isAllowedByExtension) {
+      toast.error('Unsupported file type. Please upload a PDF, image, or video file.');
+      return;
+    }
+
+    setSelectedGuidebookFile(file);
+    setGuidebookForm((prev) => ({ ...prev, file_path: '' }));
   };
 
   // Upload guidebook file to Supabase Storage
@@ -1523,19 +1568,12 @@ ${application.idea_description}
 
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="guidebook_file">Upload Guidebook File</Label>
+                            <Label htmlFor="guidebook_file">Upload Guidebook or Resource File</Label>
                             <Input
                               id="guidebook_file"
                               type="file"
-                              accept=".pdf,.doc,.docx"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  setSelectedGuidebookFile(file);
-                                  // Clear the file_path when a new file is selected
-                                  setGuidebookForm({ ...guidebookForm, file_path: '' });
-                                }
-                              }}
+                              accept=".pdf,.doc,.docx,image/*,video/*"
+                              onChange={(e) => handleGuidebookFileSelection(e.target.files?.[0])}
                               disabled={uploadingGuidebook}
                             />
                             {selectedGuidebookFile && (
@@ -1551,6 +1589,9 @@ ${application.idea_description}
                             {uploadingGuidebook && (
                               <p className="text-sm text-blue-600">Uploading...</p>
                             )}
+                            <p className="text-xs text-gray-500">
+                              Supports PDF, DOC/DOCX, image (PNG, JPG, GIF, WebP, SVG) and video (MP4, MOV, WEBM, AVI) files.
+                            </p>
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="order_index">Order</Label>
