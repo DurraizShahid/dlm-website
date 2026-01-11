@@ -1,5 +1,7 @@
 # DLM Website
 
+![DLM Logo](https://www.dlmpakistan.com/logo.png)
+
 A comprehensive web application for the Dream Launcher Movement initiative, enabling users to submit applications, manage submissions through an admin dashboard, and integrate with social media platforms (TikTok and Instagram) for content distribution.
 
 ## Overview
