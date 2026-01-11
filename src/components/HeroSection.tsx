@@ -4,6 +4,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { trackInitiateApplication } from "@/utils/metaPixel";
 
 const HeroSection = () => {
   const { translate } = useLanguage();
@@ -29,7 +30,7 @@ const HeroSection = () => {
           {translate("Pakistan ka pehla platform jo aam logon ko apna idea haqeeqat mein laane ke liye 10 Lakh rupay jeetne ka mauqa deta hai.")}
         </p>
         <div className="pt-8 flex flex-col sm:flex-row justify-center items-center gap-4 animate-fade-in-up delay-600">
-          <Link to="/apply">
+          <Link to="/apply" onClick={() => trackInitiateApplication('hero')}>
             <Button className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 px-8 sm:py-4 sm:px-10 rounded-full text-lg sm:text-xl shadow-lg transform transition-all duration-300 ease-in-out hover:scale-105 focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:ring-opacity-75 w-full sm:w-auto">
               {translate("Submit My Idea Today")}
             </Button>

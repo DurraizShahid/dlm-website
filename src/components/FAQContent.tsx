@@ -10,6 +10,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { trackInitiateApplication } from "@/utils/metaPixel";
 
 const FAQContent = () => {
   const { translate } = useLanguage();
@@ -75,9 +76,9 @@ const FAQContent = () => {
         </div>
 
         <div className="pt-8">
-          <Link to="/apply">
+          <Link to="/apply" onClick={() => trackInitiateApplication('faq')}>
             <Button className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 px-8 sm:py-4 sm:px-10 rounded-full text-lg sm:text-xl shadow-lg transform transition-all duration-300 ease-in-out hover:scale-105 focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:ring-opacity-75">
-              {translate("Don’t Wait – Apply Now")}
+              {translate("Don't Wait – Apply Now")}
             </Button>
           </Link>
           <p className="text-md sm:text-lg italic opacity-90 text-gray-600 mt-4">

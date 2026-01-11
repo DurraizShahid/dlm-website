@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { BookOpen, Users, TrendingUp, Award, GraduationCap, Lightbulb, Target, Rocket } from "lucide-react";
+import { trackInitiateApplication } from "@/utils/metaPixel";
 
 const Academy = () => {
   const { translate } = useLanguage();
@@ -310,7 +311,7 @@ const Academy = () => {
           </div>
 
           <div className="pt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
-            <Link to="/apply">
+            <Link to="/apply" onClick={() => trackInitiateApplication('academy')}>
               <Button className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-bold py-3 px-8 sm:py-4 sm:px-10 rounded-full text-lg sm:text-xl shadow-lg transform transition-all duration-300 ease-in-out hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-400 focus:ring-opacity-75 w-full sm:w-auto">
                 {translate("Apply Now & Start Learning")}
               </Button>

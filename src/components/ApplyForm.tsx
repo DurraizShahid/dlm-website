@@ -30,6 +30,7 @@ import { translations } from '@/i18n/translations';
 import { toast } from 'sonner';
 import { Upload, X, CheckCircle, AlertCircle, BookOpen, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { trackSubmitApplication } from '@/utils/metaPixel';
 // Note: Watermarking is handled by admin when downloading videos
 
 // Detect TikTok's in-app browser
@@ -226,6 +227,9 @@ const ApplyForm = () => {
 
       // Get the newly created application ID
       const newApplicationId = submittedData?.[0]?.id;
+
+      // Track successful form submission with META Pixel
+      trackSubmitApplication(newApplicationId);
 
       // Success!
       if (isPaidApplication) {

@@ -4,6 +4,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { trackInitiateApplication } from "@/utils/metaPixel";
 
 const FinalPunchSection = () => {
   const { translate } = useLanguage();
@@ -18,7 +19,7 @@ const FinalPunchSection = () => {
           {translate("Aise mauqe baar baar nahi milte.")}
         </p>
         <div className="pt-8">
-          <Link to="/apply">
+          <Link to="/apply" onClick={() => trackInitiateApplication('final-cta')}>
             <Button className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 px-8 sm:py-4 sm:px-10 rounded-full text-lg sm:text-xl shadow-lg transform transition-all duration-300 ease-in-out hover:scale-105 focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:ring-opacity-75">
               {translate("Submit Your Idea Today")}
             </Button>

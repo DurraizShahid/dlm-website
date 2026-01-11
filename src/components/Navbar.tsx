@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { trackInitiateApplication } from "@/utils/metaPixel";
 
 const Navbar = () => {
   const { language, setLanguage, translate } = useLanguage();
@@ -47,6 +48,7 @@ const Navbar = () => {
             <Link
               key={link.name}
               to={link.path}
+              onClick={() => link.path === '/apply' && trackInitiateApplication('navbar')}
               className="text-sm font-medium text-gray-700 transition-colors hover:text-green-700 dark:text-gray-300 dark:hover:text-green-400"
             >
               {link.name}
@@ -103,6 +105,7 @@ const Navbar = () => {
                   <Link
                     key={link.name}
                     to={link.path}
+                    onClick={() => link.path === '/apply' && trackInitiateApplication('mobile-menu')}
                     className="text-lg font-medium text-gray-700 hover:text-green-700 dark:text-gray-300 dark:hover:text-green-400"
                   >
                     {link.name}

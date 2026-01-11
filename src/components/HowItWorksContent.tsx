@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { FileText, Users, Crown, DollarSign } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { trackInitiateApplication } from "@/utils/metaPixel";
 
 const HowItWorksContent = () => {
   const { translate } = useLanguage();
@@ -53,9 +54,9 @@ const HowItWorksContent = () => {
               <h3 className="text-xl sm:text-2xl font-bold mb-2">{step.title}</h3>
               <p className="text-md sm:text-lg text-gray-700 mb-6">{step.description}</p>
               <p className="text-sm sm:text-md italic opacity-90 text-gray-600 mt-1 mb-6">{step.urduDescription}</p>
-              <Link to="/apply">
+              <Link to="/apply" onClick={() => trackInitiateApplication('how-it-works-content')}>
                 <Button className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-2 px-4 rounded-full text-md shadow-lg transform transition-all duration-300 ease-in-out hover:scale-105 focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:ring-opacity-75 w-full whitespace-normal h-auto">
-                  {translate("Apply Now Before It’s Too Late")}
+                  {translate("Apply Now Before It's Too Late")}
                 </Button>
               </Link>
               <p className="text-sm sm:text-md italic opacity-90 text-gray-600 mt-4">

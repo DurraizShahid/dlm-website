@@ -1,176 +1,278 @@
 # DLM Website
 
-# New Updates
+A comprehensive web application for the Dream Launcher Movement initiative, enabling users to submit applications, manage submissions through an admin dashboard, and integrate with social media platforms (TikTok and Instagram) for content distribution.
+
+## Overview
+
+The DLM Website is a full-stack application built with React, TypeScript, and Supabase. It provides:
+
+- **Public-facing website** for information and application submissions
+- **User dashboard** for applicants to view their submission status and access learning resources
+- **Admin dashboard** for managing applications, posting to social media, and managing guidebooks
+- **Social media integration** with TikTok and Instagram for content distribution
+- **Client-side video watermarking** for protected video downloads
+- **Multi-language support** for broader accessibility
 
 ## Features
 
-This website includes the following features:
+1. **Application Form**: Users can submit their ideas and information through a comprehensive form
+2. **User Dashboard**: Applicants can view their application status and access guidebooks/resources
+3. **Admin Dashboard**: Administrators can review applications, update statuses, manage guidebooks, and post to social media
+4. **TikTok Integration**: Admins can post applicant videos directly to TikTok from the dashboard
+5. **Instagram Integration**: Admins can post applicant videos directly to Instagram from the dashboard
+6. **Video Watermarking**: Videos can be downloaded with watermarks and red borders applied
+7. **Guidebook Management**: Admin can manage learning resources (PDFs, images, videos) with free/paid access control
+8. **Multi-language Support**: The website supports multiple languages for broader accessibility
+9. **Responsive Design**: Fully responsive design that works on mobile, tablet, and desktop devices
 
-1. **Application Form**: Users can submit their ideas and information through a comprehensive form.
-2. **Admin Dashboard**: Administrators can review applications, update statuses, and manage content.
-3. **TikTok Integration**: Admins can post applicant videos directly to TikTok from the dashboard.
-4. **Instagram Integration**: Admins can now post applicant videos directly to Instagram from the dashboard.
-5. **Video Watermarking**: Videos can be downloaded with watermarks applied.
-6. **Multi-language Support**: The website supports multiple languages for broader accessibility.
-7. **Responsive Design**: Fully responsive design that works on mobile, tablet, and desktop devices.
-
-## Recent Updates
-
-- **Completely redesigned watermarking system** - Production-ready client-side implementation
-- Added Instagram posting functionality to complement the existing TikTok integration
-- Enhanced admin dashboard with Instagram connection controls and watermarking features
-- Implemented Instagram API proxy to handle CORS restrictions
-- High-quality video watermarking with progress tracking and automatic retry logic
-
-## Setup Instructions
+## Getting Started
 
 ### Prerequisites
 
-- Node.js (v14 or higher)
-- pnpm package manager
-- Supabase account
-- TikTok Developer account (for TikTok integration)
-- Facebook Developer account (for Instagram integration)
+- **Node.js** (v16 or higher recommended)
+- **pnpm** package manager (install with `npm install -g pnpm`)
+- **Supabase account** and project
+- **TikTok Developer account** (optional, for TikTok integration)
+- **Facebook Developer account** (optional, for Instagram integration)
 
 ### Installation
 
-1. Clone the repository
-2. Install dependencies:
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd dlm-website
+   ```
+
+2. **Install dependencies**
    ```bash
    pnpm install
    ```
-3. Create a `.env` file based on `.env.example` and add your configuration
-4. Run the development server:
+
+3. **Set up environment variables**
+   
+   Create a `.env` file in the root directory:
+   ```env
+   # Supabase Configuration (Required)
+   VITE_SUPABASE_URL=your_supabase_project_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   
+   # TikTok Integration (Optional)
+   VITE_TIKTOK_CLIENT_KEY=your_tiktok_client_key
+   VITE_TIKTOK_CLIENT_SECRET=your_tiktok_client_secret
+   VITE_TIKTOK_REDIRECT_URI=your_tiktok_redirect_uri
+   
+   # Instagram/Facebook Integration (Optional)
+   VITE_FACEBOOK_APP_ID=your_facebook_app_id
+   VITE_FACEBOOK_APP_SECRET=your_facebook_app_secret
+   VITE_INSTAGRAM_REDIRECT_URI=your_instagram_redirect_uri
+   
+   # Meta Pixel (Optional)
+   VITE_META_PIXEL_ID=your_meta_pixel_id
+   ```
+
+4. **Set up Supabase database**
+   
+   Run the database schema migrations:
+   - Option A: Using Supabase Dashboard
+     1. Go to your Supabase project dashboard
+     2. Navigate to **SQL Editor**
+     3. Copy and paste the contents of `src/integrations/supabase/schema.sql`
+     4. Run the SQL script
+   
+   - Option B: Using Supabase CLI
+     ```bash
+     supabase db push
+     ```
+
+5. **Deploy Supabase Edge Functions** (for social media integrations)
+   ```bash
+   supabase functions deploy tiktok-proxy --project-ref your_project_id
+   supabase functions deploy instagram-proxy --project-ref your_project_id
+   ```
+
+6. **Run the development server**
    ```bash
    pnpm dev
    ```
 
-### Environment Variables
+   The application will be available at `http://localhost:8080`
 
-Create a `.env` file in the root directory with the following variables:
+## Architecture
 
-```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_TIKTOK_ACCESS_TOKEN=your_tiktok_access_token
-VITE_FACEBOOK_APP_ID=your_facebook_app_id
-VITE_FACEBOOK_APP_SECRET=your_facebook_app_secret
+### High-Level Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         Frontend (React + Vite)                      │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐     │
+│  │  Public Pages   │  │  User Dashboard │  │  Admin Dashboard│     │
+│  │  - Home         │  │  - View Status  │  │  - Manage Apps  │     │
+│  │  - Apply        │  │  - Guidebooks   │  │  - Post to SM   │     │
+│  │  - About        │  │  - Resources    │  │  - Watermarking │     │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘     │
+│           │                    │                    │                │
+│           └────────────────────┼────────────────────┘                │
+│                                │                                     │
+└────────────────────────────────┼─────────────────────────────────────┘
+                                 │
+                                 │ HTTP/HTTPS
+                                 │
+┌────────────────────────────────┼─────────────────────────────────────┐
+│                    Supabase Backend                                  │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │  Database (PostgreSQL)                                      │   │
+│  │  - application_submissions  │  guidebooks  │  users         │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│                                                                      │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │  Storage (S3-compatible)                                    │   │
+│  │  - application-videos bucket                                │   │
+│  │    ├── videos/ (application videos)                         │   │
+│  │    ├── screenshots/ (payment screenshots)                   │   │
+│  │    └── guidebooks/ (learning resources)                     │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│                                                                      │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │  Edge Functions                                              │   │
+│  │  - tiktok-proxy (OAuth & API proxy)                         │   │
+│  │  - instagram-proxy (OAuth & API proxy)                      │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────┘
+                                 │
+                                 │ API Calls
+                                 │
+┌────────────────────────────────┼─────────────────────────────────────┐
+│              External Services                                      │
+│  ┌─────────────────┐          ┌─────────────────┐                  │
+│  │  TikTok API     │          │  Instagram API  │                  │
+│  │  (via proxy)    │          │  (via proxy)    │                  │
+│  └─────────────────┘          └─────────────────┘                  │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-### Supabase Functions
+### Key Components
 
-The application uses Supabase functions for API proxying:
+1. **Frontend Application**
+   - Built with React 18, TypeScript, and Vite
+   - UI components using Radix UI and Tailwind CSS
+   - Client-side routing with React Router
+   - State management with React Context and React Query
 
-1. **TikTok Proxy**: Handles TikTok API requests to bypass CORS restrictions
-2. **Instagram Proxy**: Handles Instagram API requests to bypass CORS restrictions
+2. **Backend (Supabase)**
+   - **Database**: PostgreSQL with Row Level Security (RLS)
+   - **Storage**: S3-compatible object storage for videos and files
+   - **Edge Functions**: Serverless functions for API proxying (TikTok/Instagram)
 
-Deploy these functions using the Supabase CLI:
+3. **External Integrations**
+   - **TikTok API**: OAuth authentication and video posting
+   - **Instagram API**: OAuth authentication via Facebook and video posting
+   - **Meta Pixel**: Analytics tracking
 
-```bash
-supabase functions deploy tiktok-proxy --project-ref your_project_id
-supabase functions deploy instagram-proxy --project-ref your_project_id
-```
+4. **Client-Side Processing**
+   - **Video Watermarking**: FFmpeg.js for adding watermarks and borders
+   - **File Handling**: Client-side file validation and uploads
 
-## Instagram Integration
+## Admin Dashboard Authentication
 
-To use the Instagram posting feature:
+**Important Note**: The admin dashboard currently uses **hardcoded credentials** for authentication:
 
-1. Create a Facebook App with Instagram Basic Display API enabled
-2. Configure the app with proper redirect URLs
-3. Set the required environment variables
-4. In the admin dashboard, click "Connect Instagram"
-5. Authorize the application to post to your Instagram account
-6. Use the "Post to Instagram" button on applications with videos
+- **Username**: `admin`
+- **Password**: `admin`
 
-For detailed setup instructions, refer to [INSTAGRAM_INTEGRATION.md](INSTAGRAM_INTEGRATION.md).
+This is a temporary solution implemented because Supabase role-based access control (RBAC) was found to be unreliable according to operations. This can be changed in the future to implement a more secure authentication mechanism (e.g., environment variable-based authentication, Supabase Auth with proper role management, or a custom authentication solution).
 
-## TikTok Integration
-
-To use the TikTok posting feature:
-
-1. Create a TikTok Developer account
-2. Create an app and obtain client credentials
-3. Set the required environment variables
-4. In the admin dashboard, click "Connect TikTok"
-5. Authorize the application to post to your TikTok account
-6. Use the "Post to TikTok" button on applications with videos
-
-For detailed setup instructions, refer to [TIKTOK_INTEGRATION.md](TIKTOK_INTEGRATION.md).
-
-## Video Watermarking
-
-The application uses a **production-ready client-side watermarking system**:
-
-- **High-Quality Output**: 8 Mbps bitrate for excellent video quality
-- **Reliable Audio**: Web Audio API ensures audio preservation
-- **Progress Tracking**: Real-time frame-by-frame progress updates
-- **Automatic Retry**: 3 attempts with exponential backoff
-- **Watermark Verification**: Confirms watermark was applied correctly
-- **Memory Safe**: Comprehensive cleanup prevents memory leaks
-- **Customizable**: Adjust position, opacity, size, and watermark image
-
-Watermarking happens in the admin dashboard when downloading videos. No server processing required.
-
-For complete documentation, refer to:
-- [WATERMARKING_SYSTEM.md](WATERMARKING_SYSTEM.md) - Full system documentation
+To change the admin credentials, modify the authentication logic in `src/pages/Admin.tsx` (around line 276).
 
 ## Development
 
 ### Available Scripts
 
-- `pnpm dev`: Start the development server
-- `pnpm build`: Build the production version
-- `pnpm preview`: Preview the production build
-- `pnpm lint`: Run ESLint
+- `pnpm dev` - Start the development server (runs on port 8080)
+- `pnpm build` - Build the production version
+- `pnpm build:dev` - Build for development environment
+- `pnpm preview` - Preview the production build locally
+- `pnpm lint` - Run ESLint to check code quality
 
 ### Project Structure
 
 ```
-src/
-├── components/     # React components
-├── pages/          # Page components
-├── utils/          # Utility functions
-├── integrations/   # Third-party integrations
-├── contexts/       # React contexts
-├── hooks/          # Custom hooks
-├── i18n/           # Internationalization files
-├── types/          # TypeScript types
-└── lib/            # Library functions
-
-render-watermark-service/
-├── server.js       # Express server for watermarking
-├── package.json    # Dependencies and scripts
-└── README.md       # Service documentation
+dlm-website/
+├── src/
+│   ├── components/        # Reusable React components
+│   │   ├── ui/           # shadcn/ui component library
+│   │   └── ...           # Feature-specific components
+│   ├── pages/            # Page components (routes)
+│   ├── utils/            # Utility functions
+│   │   ├── videoUtils.ts        # Video handling utilities
+│   │   ├── videoWatermark.ts    # Watermarking implementation
+│   │   ├── tiktokUtils.ts       # TikTok integration
+│   │   ├── instagramUtils.ts    # Instagram integration
+│   │   └── ...
+│   ├── integrations/     # Third-party service integrations
+│   │   └── supabase/     # Supabase client and schema
+│   ├── contexts/         # React Context providers
+│   ├── hooks/            # Custom React hooks
+│   ├── i18n/             # Internationalization
+│   ├── types/            # TypeScript type definitions
+│   └── lib/              # Library utilities
+├── supabase/
+│   ├── functions/        # Supabase Edge Functions
+│   │   ├── tiktok-proxy/
+│   │   └── instagram-proxy/
+│   └── migrations/       # Database migrations
+├── public/               # Static assets
+└── guidebooks/           # Guidebook files
 ```
 
 ## Deployment
 
-The application can be deployed to any static hosting service that supports client-side routing, such as Vercel, Netlify, or GitHub Pages.
+### Build for Production
 
-For Supabase deployment:
-1. Build the application: `pnpm build`
-2. Deploy the `dist/` folder to your hosting provider
-3. Ensure environment variables are set in your hosting environment
+```bash
+pnpm build
+```
 
-For Render watermarking service deployment:
-1. Deploy the `render-watermark-service` directory as a Web Service
-2. Set the required environment variables in the Render dashboard
-3. Configure your admin panel to use the Render service endpoint
+This creates a `dist/` directory with optimized production files.
 
-## Troubleshooting
+### Deploy to Vercel (Recommended)
 
-For common issues and solutions, refer to:
-- [WATERMARKING_SYSTEM.md](WATERMARKING_SYSTEM.md) - Comprehensive watermarking documentation
-- [DEBUGGING_GUIDE.md](DEBUGGING_GUIDE.md) - General debugging guide
+1. Connect your repository to Vercel
+2. Set environment variables in Vercel dashboard
+3. Deploy automatically on push to main branch
+
+### Deploy to Other Platforms
+
+The application can be deployed to any static hosting service:
+- **Netlify**: Connect repository and set environment variables
+- **GitHub Pages**: Use GitHub Actions to build and deploy
+- **Supabase Hosting**: Deploy directly from Supabase dashboard
+
+### Environment Variables in Production
+
+Ensure all required environment variables are set in your hosting environment:
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- (Optional) Social media integration variables
+
+## Additional Documentation
+
+For detailed information on specific features, refer to:
+
+- [INSTAGRAM_INTEGRATION.md](INSTAGRAM_INTEGRATION.md) - Instagram setup and integration
+- [TIKTOK_INTEGRATION.md](TIKTOK_INTEGRATION.md) - TikTok setup and integration
+- [WATERMARKING_SYSTEM.md](WATERMARKING_SYSTEM.md) - Video watermarking documentation
+- [ADMIN_DASHBOARD.md](ADMIN_DASHBOARD.md) - Admin dashboard features
+- [DEBUGGING_GUIDE.md](DEBUGGING_GUIDE.md) - Troubleshooting guide
 - [TIKTOK_TROUBLESHOOTING.md](TIKTOK_TROUBLESHOOTING.md) - TikTok integration issues
-- [INSTAGRAM_INTEGRATION.md](INSTAGRAM_INTEGRATION.md) - Instagram setup and issues
+- [INSTAGRAM_TROUBLESHOOTING.md](INSTAGRAM_TROUBLESHOOTING.md) - Instagram integration issues
 
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 

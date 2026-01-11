@@ -2,7 +2,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import HowItWorks from "./pages/HowItWorks";
@@ -18,11 +19,18 @@ import NotFound from "./pages/NotFound";
 import Navbar from "./components/Navbar";
 import { LanguageProvider } from "./i18n/LanguageContext";
 import { useLanguage } from "./i18n/LanguageContext";
+import { initMetaPixel, trackPageView, getMetaPixelId } from "./utils/metaPixel";
 
 const queryClient = new QueryClient();
 
 const AppContent = () => {
   const { translate } = useLanguage();
+  const location = useLocation();
+
+  // Track page views on route changes
+  useEffect(() => {
+    trackPageView();
+  }, [location.pathname]);
 
   return (
     <>
@@ -57,18 +65,28 @@ const AppContent = () => {
   );
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <LanguageProvider>
-        <BrowserRouter>
-          <AppContent />
-        </BrowserRouter>
-      </LanguageProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  // Initialize Meta Pixel on app mount
+  useEffect(() => {
+    const pixelId = getMetaPixelId();
+    if (pixelId) {
+      initMetaPixel(pixelId);
+    }
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <LanguageProvider>
+          <BrowserRouter>
+            <AppContent />
+          </BrowserRouter>
+        </LanguageProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
